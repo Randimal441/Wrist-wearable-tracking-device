@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ThemeToggle from '../../components/ThemeToggle';
 
 interface AdminProps {
   admin: { name: string; email: string };
@@ -66,12 +67,13 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
                 <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
             </div>
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
                 Wrist<span style={{ color: '#fb923c' }}>Track</span>
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--accent-orange)', marginTop: '-1px', fontWeight: 600 }}>Admin Panel</div>
             </div>
+            <ThemeToggle size="sm" />
           </div>
         </div>
 
@@ -167,7 +169,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
           padding: '1.25rem 2rem',
           borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'rgba(13,15,26,0.8)',
+          background: 'var(--header-bg)',
           backdropFilter: 'blur(12px)',
           position: 'sticky', top: 0, zIndex: 10,
         }}>
@@ -193,6 +195,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
               <div className="pulse-dot" style={{ width: '6px', height: '6px' }} />
               System Normal
             </div>
+            <ThemeToggle />
           </div>
         </header>
 
