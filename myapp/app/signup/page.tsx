@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import ThemeToggle from '../../components/ThemeToggle';
 
 interface FormState {
   name: string;
@@ -104,6 +105,10 @@ export default function SignupPage() {
 
   return (
     <main className="bg-mesh min-h-screen flex items-center justify-center p-4">
+      {/* Theme toggle — floating top-right */}
+      <div style={{ position: 'fixed', top: '1.25rem', right: '1.25rem', zIndex: 50 }}>
+        <ThemeToggle />
+      </div>
       {/* Background glow orbs */}
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         <div style={{

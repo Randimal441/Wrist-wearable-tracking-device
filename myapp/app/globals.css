@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /* ─── CSS Variables / Design Tokens ───────────────────────────────────────── */
-:root {
+/* Dark mode — set by data-theme="dark" on <html> */
+[data-theme="dark"] {
   --bg-primary:    #0d0f1a;
   --bg-secondary:  #131629;
   --bg-card:       rgba(255, 255, 255, 0.04);
@@ -16,20 +17,79 @@
 
   --text-primary:   #f1f5f9;
   --text-secondary: #94a3b8;
-  --text-muted:     #475569;
+  --text-muted:     #64748b;
 
   --border:         rgba(255, 255, 255, 0.08);
   --border-focus:   rgba(108, 99, 255, 0.6);
 
   --shadow-glow:    0 0 40px rgba(108, 99, 255, 0.15);
   --shadow-card:    0 4px 24px rgba(0, 0, 0, 0.4);
+
+  /* Component-specific tokens */
+  --sidebar-bg:     rgba(13, 15, 26, 0.95);
+  --header-bg:      rgba(13, 15, 26, 0.8);
+  --auth-card-bg:   rgba(19, 22, 41, 0.8);
+  --input-bg:       rgba(255, 255, 255, 0.04);
+  --input-bg-focus: rgba(108, 99, 255, 0.06);
+  --mesh-gradient:  radial-gradient(ellipse 80% 60% at 20% 10%, rgba(108, 99, 255, 0.12) 0%, transparent 60%),
+                    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(34, 211, 238, 0.08) 0%, transparent 60%),
+                    #0d0f1a;
+}
+
+/* ─── Light Mode ────────────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-primary:    #f0f2fa;
+  --bg-secondary:  #e8eaf5;
+  --bg-card:       rgba(255, 255, 255, 0.75);
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+
+  --accent-primary: #5b52e8;
+  --accent-secondary: #7c6fe8;
+  --accent-teal:    #0ea5c9;
+  --accent-green:   #16a97a;
+  --accent-red:     #e05353;
+  --accent-orange:  #e07d2a;
+
+  --text-primary:   #0f1120;
+  --text-secondary: #374151;
+  --text-muted:     #6b7280;
+
+  --border:         rgba(0, 0, 0, 0.10);
+  --border-focus:   rgba(91, 82, 232, 0.5);
+
+  --shadow-glow:    0 0 40px rgba(91, 82, 232, 0.12);
+  --shadow-card:    0 4px 24px rgba(0, 0, 0, 0.08);
+
+  /* Component-specific tokens */
+  --sidebar-bg:     rgba(230, 232, 248, 0.98);
+  --header-bg:      rgba(235, 237, 250, 0.85);
+  --auth-card-bg:   rgba(255, 255, 255, 0.90);
+  --input-bg:       rgba(0, 0, 0, 0.04);
+  --input-bg-focus: rgba(91, 82, 232, 0.06);
+  --mesh-gradient:  radial-gradient(ellipse 80% 60% at 20% 10%, rgba(91, 82, 232, 0.08) 0%, transparent 60%),
+                    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(14, 165, 201, 0.06) 0%, transparent 60%),
+                    #f0f2fa;
+}
+
+/* ─── Theme Transition ──────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  transition-property: background-color, border-color, color, box-shadow, opacity;
+  transition-duration: 0.25s;
+  transition-timing-function: ease;
+}
+
+/* Exclude transitions that would feel sluggish */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, box-shadow;
 }
 
 /* ─── Base ─────────────────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
-
-html { scroll-behavior: smooth; }
-
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -46,10 +106,7 @@ body {
 
 /* ─── Background mesh ───────────────────────────────────────────────────────── */
 .bg-mesh {
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(108, 99, 255, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 80%, rgba(34, 211, 238, 0.08) 0%, transparent 60%),
-    var(--bg-primary);
+  background: var(--mesh-gradient);
 }
 
 /* ─── Glass card ───────────────────────────────────────────────────────────── */
@@ -71,12 +128,12 @@ body {
 
 /* ─── Auth Card ──────────────────────────────────────────────────────────────── */
 .auth-card {
-  background: rgba(19, 22, 41, 0.8);
+  background: var(--auth-card-bg);
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
-  border: 1px solid rgba(108, 99, 255, 0.15);
+  border: 1px solid var(--border-focus);
   border-radius: 1.5rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), var(--shadow-glow);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), var(--shadow-glow);
 }
 
 /* ─── Buttons ──────────────────────────────────────────────────────────────── */
@@ -132,7 +189,7 @@ body {
 .input-field {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--input-bg);
   border: 1px solid var(--border);
   border-radius: 0.75rem;
   color: var(--text-primary);
@@ -146,7 +203,7 @@ body {
 
 .input-field:focus {
   border-color: var(--accent-primary);
-  background: rgba(108, 99, 255, 0.06);
+  background: var(--input-bg-focus);
   box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.12);
 }
 
@@ -164,7 +221,7 @@ body {
 .sidebar {
   width: 260px;
   flex-shrink: 0;
-  background: rgba(13, 15, 26, 0.95);
+  background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;

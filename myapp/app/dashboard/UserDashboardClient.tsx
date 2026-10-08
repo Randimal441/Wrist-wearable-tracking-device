@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ThemeToggle from '../../components/ThemeToggle';
 
 interface UserProps {
   user: { name: string; email: string };
@@ -59,12 +60,13 @@ export default function UserDashboardClient({ user }: UserProps) {
                 <path d="M12 6v6l3 3" />
               </svg>
             </div>
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
                 Wrist<span style={{ color: 'var(--accent-secondary)' }}>Track</span>
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '-1px' }}>User Portal</div>
             </div>
+            <ThemeToggle size="sm" />
           </div>
         </div>
 
@@ -142,7 +144,7 @@ export default function UserDashboardClient({ user }: UserProps) {
           padding: '1.25rem 2rem',
           borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: 'rgba(13,15,26,0.8)',
+          background: 'var(--header-bg)',
           backdropFilter: 'blur(12px)',
           position: 'sticky', top: 0, zIndex: 10,
         }}>
@@ -163,6 +165,7 @@ export default function UserDashboardClient({ user }: UserProps) {
               <div className="pulse-dot" />
               Device Online
             </div>
+            <ThemeToggle />
           </div>
         </header>
 
