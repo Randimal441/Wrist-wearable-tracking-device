@@ -30,8 +30,14 @@ function SidebarLink({
 
 export default function UserDashboardClient({ user }: UserProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('delivery');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  const selectTab = (tab: string) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
+  };
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -45,7 +51,7 @@ export default function UserDashboardClient({ user }: UserProps) {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar${sidebarOpen ? ' sidebar-open' : ''}`}>
         {/* Logo */}
         <div style={{ padding: '1.5rem 1.25rem 1rem', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
@@ -73,32 +79,38 @@ export default function UserDashboardClient({ user }: UserProps) {
         {/* Nav */}
         <nav style={{ flex: 1, padding: '1rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
           <SidebarLink
-            active={activeTab === 'overview'}
-            onClick={() => setActiveTab('overview')}
-            label="Overview"
-            icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></svg>}
+            active={activeTab === 'delivery'}
+            onClick={() => selectTab('delivery')}
+            label="Delivery Performance"
+            icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="m7 16 4-5 3 3 5-7" /></svg>}
           />
           <SidebarLink
-            active={activeTab === 'health'}
-            onClick={() => setActiveTab('health')}
-            label="Health Metrics"
-            icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>}
+            active={activeTab === 'speed'}
+            onClick={() => selectTab('speed')}
+            label="Speed Status"
+            icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 14 16 10" /><path d="M3.34 19a10 10 0 1 1 17.32 0" /><path d="M12 2v2" /></svg>}
           />
           <SidebarLink
-            active={activeTab === 'device'}
-            onClick={() => setActiveTab('device')}
-            label="My Device"
-            icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="7" /><path d="M12 6v6l3 3" /></svg>}
+            active={activeTab === 'grip'}
+            onClick={() => selectTab('grip')}
+            label="Grip Status"
+            icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 11V5a2 2 0 1 1 4 0v5" /><path d="M12 10V3a2 2 0 1 1 4 0v8" /><path d="M16 10V6a2 2 0 1 1 4 0v8c0 4-2 7-7 7h-1c-3 0-5-1-7-4l-2-3a2 2 0 0 1 3-2l2 2V8a2 2 0 1 1 4 0v3" /></svg>}
           />
           <SidebarLink
-            active={activeTab === 'activity'}
-            onClick={() => setActiveTab('activity')}
-            label="Activity Log"
-            icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20V10" /><path d="M18 20V4" /><path d="M6 20v-4" /></svg>}
+            active={activeTab === 'wrist'}
+            onClick={() => selectTab('wrist')}
+            label="Wrist Angle Status"
+            icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 3v9l6 3" /><path d="M12 12 8 7" /></svg>}
+          />
+          <SidebarLink
+            active={activeTab === 'recommendations'}
+            onClick={() => selectTab('recommendations')}
+            label="Personalized Recommendations"
+            icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8H4l4.8 3.5-1.8 5.9 5-3.6 5 3.6-1.8-5.9 4.8-3.5h-6.1z" /></svg>}
           />
           <SidebarLink
             active={activeTab === 'settings'}
-            onClick={() => setActiveTab('settings')}
+            onClick={() => selectTab('settings')}
             label="Settings"
             icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>}
           />
@@ -137,6 +149,15 @@ export default function UserDashboardClient({ user }: UserProps) {
         </div>
       </aside>
 
+      {sidebarOpen && (
+        <button
+          className="sidebar-backdrop"
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Content */}
       <main style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
         {/* Top bar */}
@@ -149,11 +170,23 @@ export default function UserDashboardClient({ user }: UserProps) {
           position: 'sticky', top: 0, zIndex: 10,
         }}>
           <div>
+            <button
+              className="mobile-menu-button"
+              type="button"
+              aria-label={sidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={sidebarOpen}
+              onClick={() => setSidebarOpen((open) => !open)}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
             <h2 style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--text-primary)' }}>
-              {activeTab === 'overview' && 'Dashboard Overview'}
-              {activeTab === 'health' && 'Health Metrics'}
-              {activeTab === 'device' && 'My Device'}
-              {activeTab === 'activity' && 'Activity Log'}
+              {activeTab === 'delivery' && 'Delivery Performance'}
+              {activeTab === 'speed' && 'Speed Status'}
+              {activeTab === 'grip' && 'Grip Status'}
+              {activeTab === 'wrist' && 'Wrist Angle Status'}
+              {activeTab === 'recommendations' && 'Personalized Recommendations'}
               {activeTab === 'settings' && 'Settings'}
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '1px' }}>
@@ -171,13 +204,153 @@ export default function UserDashboardClient({ user }: UserProps) {
 
         {/* Page Content */}
         <div style={{ flex: 1, padding: '2rem', maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
-          {activeTab === 'overview' && <OverviewTab userName={user.name.split(' ')[0]} />}
-          {activeTab === 'health' && <ComingSoonTab label="Health Metrics" />}
-          {activeTab === 'device' && <ComingSoonTab label="Device Management" />}
-          {activeTab === 'activity' && <ComingSoonTab label="Activity Log" />}
+          {activeTab === 'delivery' && <DeliveryPerformance />}
+          {activeTab === 'speed' && <ComingSoonTab label="Speed Status" />}
+          {activeTab === 'grip' && <ComingSoonTab label="Grip Status" />}
+          {activeTab === 'wrist' && <ComingSoonTab label="Wrist Angle Status" />}
+          {activeTab === 'recommendations' && <ComingSoonTab label="Personalized Recommendations" />}
           {activeTab === 'settings' && <ComingSoonTab label="Account Settings" />}
         </div>
       </main>
+    </div>
+  );
+}
+
+interface DeliveryMetric {
+  speed: number;
+  grip: number;
+  wristAngle: number;
+}
+
+const latestDelivery: DeliveryMetric = {
+  speed: 118.4,
+  grip: 72,
+  wristAngle: 84,
+};
+
+const prediction: DeliveryMetric & { speedRange: [number, number] } = {
+  speed: 121,
+  speedRange: [119, 124],
+  grip: 86,
+  wristAngle: 91,
+};
+
+function DeliveryPerformance() {
+  const speedDifference = Math.abs(latestDelivery.speed - prediction.speed);
+  const speedDeviation = (speedDifference / prediction.speed) * 100;
+  const gripDifference = Math.abs(latestDelivery.grip - prediction.grip);
+  const wristDifference = Math.abs(latestDelivery.wristAngle - prediction.wristAngle);
+  const largestDifference = Math.max(speedDeviation, gripDifference, wristDifference);
+
+  const issue = largestDifference === gripDifference
+    ? { label: 'Grip needs attention', detail: 'Your grip is lower than the model prediction for this delivery.', color: 'var(--accent-orange)' }
+    : largestDifference === wristDifference
+      ? { label: 'Wrist angle needs attention', detail: 'Your wrist angle is lower than the model prediction for this delivery.', color: 'var(--accent-teal)' }
+      : { label: 'Speed needs attention', detail: 'Your current delivery speed is outside the predicted target.', color: 'var(--accent-red)' };
+
+  return (
+    <div className="delivery-performance animate-fade-in">
+      <div className="delivery-intro">
+        <div>
+          <span className="eyebrow">Live delivery analysis</span>
+          <h3>Latest bowling delivery</h3>
+          <p>Compare your latest IoT reading with the trained model prediction.</p>
+        </div>
+        <div className="badge badge-green"><div className="pulse-dot" />Data received</div>
+      </div>
+
+      <div className="delivery-columns">
+        <DeliveryCard title="Current Delivery" metrics={latestDelivery} />
+        <DeliveryCard title="Prediction" metrics={prediction} predicted />
+      </div>
+
+      <section className="call-analysis glass-card" aria-labelledby="call-analysis-title">
+        <div className="analysis-icon" style={{ color: issue.color }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3 2.5 20h19L12 3Z" /><path d="M12 9v4" /><path d="M12 17h.01" />
+          </svg>
+        </div>
+        <div className="analysis-copy">
+          <span className="eyebrow">Call analysis</span>
+          <h4 id="call-analysis-title">{issue.label}</h4>
+          <p>{issue.detail}</p>
+        </div>
+        <div className="analysis-summary">
+          <span>Speed difference</span>
+          <strong>{speedDifference.toFixed(1)} km/h</strong>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function DeliveryCard({
+  title,
+  metrics,
+  predicted = false,
+}: {
+  title: string;
+  metrics: DeliveryMetric & Partial<{ speedRange: [number, number] }>;
+  predicted?: boolean;
+}) {
+  return (
+    <section className={`delivery-card glass-card ${predicted ? 'prediction-card' : 'current-card'}`} aria-labelledby={`${title.toLowerCase().replace(' ', '-')}-title`}>
+      <div className="delivery-card-heading">
+        <h4 id={`${title.toLowerCase().replace(' ', '-')}-title`}>{title}</h4>
+        {predicted && <span className="badge badge-purple">Model output</span>}
+      </div>
+      <div className="delivery-metrics">
+        <MetricRow
+          label="Speed"
+          value={predicted && metrics.speedRange ? `${metrics.speedRange[0]}–${metrics.speedRange[1]}` : metrics.speed.toFixed(1)}
+          unit="km/h"
+          icon={<path d="M12 14 16 10" />} 
+          accent="var(--accent-secondary)"
+        />
+        <MetricRow
+          label="Grip"
+          value={`${metrics.grip}`}
+          unit="%"
+          icon={<path d="M8 11V5a2 2 0 1 1 4 0v5M12 10V3a2 2 0 1 1 4 0v8M16 10V6a2 2 0 1 1 4 0v8c0 4-2 7-7 7h-1c-3 0-5-1-7-4l-2-3a2 2 0 0 1 3-2l2 2V8a2 2 0 1 1 4 0v3" />}
+          accent="var(--accent-orange)"
+          percentage={metrics.grip}
+        />
+        <MetricRow
+          label="Wrist angle"
+          value={`${metrics.wristAngle}`}
+          unit="%"
+          icon={<><circle cx="12" cy="12" r="9" /><path d="M12 3v9l6 3" /></>}
+          accent="var(--accent-teal)"
+          percentage={metrics.wristAngle}
+        />
+      </div>
+    </section>
+  );
+}
+
+function MetricRow({
+  label,
+  value,
+  unit,
+  icon,
+  accent,
+  percentage,
+}: {
+  label: string;
+  value: string;
+  unit: string;
+  icon: React.ReactNode;
+  accent: string;
+  percentage?: number;
+}) {
+  return (
+    <div className="metric-row">
+      <div className="metric-label">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+        <span>{label}</span>
+      </div>
+      <div className="metric-value"><strong>{value}</strong><span>{unit}</span></div>
+      {percentage !== undefined && <div className="metric-progress"><span style={{ width: `${percentage}%`, background: accent }} /></div>}
     </div>
   );
 }

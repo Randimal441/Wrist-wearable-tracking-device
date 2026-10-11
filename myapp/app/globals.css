@@ -256,6 +256,78 @@ body {
 }
 
 /* ─── Stats cards ───────────────────────────────────────────────────────────── */
+.delivery-performance { max-width: 1100px; margin: 0 auto; position: relative; }
+.delivery-performance::before { content: ''; position: absolute; top: -7rem; left: 16%; width: 30rem; height: 18rem; pointer-events: none; background: radial-gradient(ellipse, rgba(108, 99, 255, 0.12), transparent 68%); filter: blur(12px); }
+.delivery-intro { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.delivery-intro > * { position: relative; z-index: 1; }
+.delivery-intro h3 { color: var(--text-primary); font-size: clamp(1.35rem, 2vw, 1.65rem); letter-spacing: -0.025em; font-weight: 750; margin: 0.3rem 0 0.35rem; }
+.delivery-intro p { color: var(--text-secondary); font-size: 0.875rem; margin: 0; }
+.eyebrow { color: var(--accent-secondary); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.11em; text-transform: uppercase; }
+.delivery-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.delivery-card { position: relative; overflow: hidden; padding: 1.5rem; }
+.delivery-card::before { content: ''; position: absolute; inset: 0 0 auto; height: 3px; background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary)); }
+.prediction-card::before { background: linear-gradient(90deg, var(--accent-teal), var(--accent-secondary)); }
+.delivery-card:hover { transform: translateY(-3px); }
+.delivery-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.delivery-card-heading h4 { color: var(--text-primary); font-size: 1.15rem; letter-spacing: -0.015em; font-weight: 700; margin: 0; }
+.delivery-metrics { display: flex; flex-direction: column; gap: 0.85rem; padding-top: 1rem; }
+.metric-row { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.75rem; padding: 0.95rem 1rem; border: 1px solid var(--border); border-radius: 0.8rem; background: rgba(255, 255, 255, 0.025); transition: transform 0.2s, background 0.2s, border-color 0.2s; }
+.metric-row:hover { transform: translateX(3px); background: var(--bg-card-hover); border-color: rgba(167, 139, 250, 0.28); }
+.metric-label { display: flex; align-items: center; gap: 0.65rem; color: var(--text-secondary); font-size: 0.875rem; font-weight: 600; }
+.metric-label svg { padding: 0.22rem; width: 27px; height: 27px; border-radius: 0.5rem; background: rgba(108, 99, 255, 0.1); }
+.metric-value { display: flex; align-items: baseline; gap: 0.3rem; }
+.metric-value strong { color: var(--text-primary); font-size: 1.3rem; font-weight: 750; letter-spacing: -0.025em; }
+.metric-value span { color: var(--text-muted); font-size: 0.75rem; }
+.metric-progress { grid-column: 1 / -1; height: 4px; overflow: hidden; border-radius: 99px; background: var(--border); }
+.metric-progress span { display: block; height: 100%; border-radius: inherit; }
+.call-analysis { position: relative; overflow: hidden; display: flex; align-items: center; gap: 1rem; margin-top: 1.25rem; padding: 1.25rem 1.5rem; background: linear-gradient(105deg, rgba(251, 146, 60, 0.08), var(--bg-card) 42%); }
+.call-analysis::after { content: ''; position: absolute; right: -4rem; bottom: -5rem; width: 13rem; height: 13rem; pointer-events: none; border-radius: 50%; background: rgba(251, 146, 60, 0.08); filter: blur(18px); }
+.analysis-icon { display: grid; flex: 0 0 44px; place-items: center; width: 44px; height: 44px; border-radius: 0.75rem; background: rgba(251, 146, 60, 0.1); }
+.analysis-copy { position: relative; z-index: 1; flex: 1; min-width: 0; }
+.analysis-copy h4 { color: var(--text-primary); font-size: 1rem; margin: 0.25rem 0; }
+.analysis-copy p { color: var(--text-secondary); font-size: 0.8125rem; margin: 0; }
+.analysis-summary { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; padding-left: 1.5rem; border-left: 1px solid var(--border); }
+.analysis-summary span { color: var(--text-muted); font-size: 0.7rem; }
+.analysis-summary strong { color: var(--text-primary); font-size: 1rem; }
+
+.mobile-menu-button,
+.sidebar-backdrop { display: none; }
+
+@media (max-width: 760px) {
+  html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+  body { scrollbar-width: none; }
+  body::-webkit-scrollbar,
+  main::-webkit-scrollbar,
+  html::-webkit-scrollbar { width: 0; height: 0; display: none; }
+  main { width: 100%; min-width: 0; max-width: 100%; overflow-x: hidden; scrollbar-width: none; }
+  .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 30; width: min(82vw, 300px); transform: translateX(-105%); box-shadow: 18px 0 40px rgba(0, 0, 0, 0.28); transition: transform 0.25s ease; }
+  .sidebar.sidebar-open { transform: translateX(0); }
+  .sidebar-backdrop { display: block; position: fixed; inset: 0; z-index: 20; width: 100%; height: 100%; padding: 0; border: 0; background: rgba(5, 7, 15, 0.62); backdrop-filter: blur(3px); cursor: pointer; }
+  .mobile-menu-button { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; margin-right: 0.65rem; padding: 0; border: 1px solid var(--border); border-radius: 0.65rem; background: var(--bg-card); color: var(--text-secondary); cursor: pointer; }
+  .mobile-menu-button:hover { color: var(--text-primary); background: var(--bg-card-hover); }
+  main > header > div:first-child { display: flex; align-items: center; }
+  main > header { padding: 1rem 1.1rem; }
+  main > header > div:last-child { gap: 0.45rem; }
+  main > header .badge { display: none; }
+  main > div { padding: 1.25rem 1rem !important; }
+  .delivery-columns { grid-template-columns: 1fr; }
+  .delivery-intro { flex-direction: column; }
+  .call-analysis { align-items: flex-start; flex-wrap: wrap; }
+  .analysis-summary { width: 100%; align-items: flex-start; padding: 0.85rem 0 0; border-left: none; border-top: 1px solid var(--border); }
+}
+
+/* Keep mobile scrolling available while removing browser scrollbar tracks. */
+@media (max-width: 1024px) {
+  html, body { overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  #__next::-webkit-scrollbar,
+  main::-webkit-scrollbar,
+  aside::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  *, *::before, *::after { scrollbar-width: none; -ms-overflow-style: none; }
+  *::-webkit-scrollbar { display: none; width: 0; height: 0; }
+}
+
 .stat-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
