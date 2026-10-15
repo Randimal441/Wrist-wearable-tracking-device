@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '../../components/ThemeToggle';
+import PersonalizedRecommendation from './PersonalizedRecommendation';
 
 interface UserProps {
   user: { name: string; email: string };
@@ -208,7 +209,7 @@ export default function UserDashboardClient({ user }: UserProps) {
           {activeTab === 'speed' && <ComingSoonTab label="Speed Status" />}
           {activeTab === 'grip' && <ComingSoonTab label="Grip Status" />}
           {activeTab === 'wrist' && <WristAngleStatus />}
-          {activeTab === 'recommendations' && <ComingSoonTab label="Personalized Recommendations" />}
+          {activeTab === 'recommendations' && <PersonalizedRecommendation />}
           {activeTab === 'settings' && <ComingSoonTab label="Account Settings" />}
         </div>
       </main>
