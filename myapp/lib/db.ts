@@ -11,18 +11,38 @@ declare global {
   var _pgPool: Pool | undefined;
 }
 
-const pool: Pool =
-  globalThis._pgPool ??
-  new Pool({
-    connectionString: process.env.DATABASE_URL,
+function getPool(): Pool {
+  if (globalThis._pgPool) return globalThis._pgPool;
+
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error(
+      'DATABASE_URL is not set. Please add it to your .env.local file.\n' +
+      'Example: DATABASE_URL=postgresql://USER@localhost:5432/wrist_tracking'
+    );
+  }
+
+  const pool = new Pool({
+    connectionString,
     ssl:
       process.env.NODE_ENV === 'production'
         ? { rejectUnauthorized: false }
         : false,
   });
 
-if (process.env.NODE_ENV !== 'production') {
-  globalThis._pgPool = pool;
+  if (process.env.NODE_ENV !== 'production') {
+    globalThis._pgPool = pool;
+  }
+
+  return pool;
 }
+
+// Lazy proxy — the Pool is created on first property access,
+// ensuring env vars are loaded before the connection is made.
+const pool = new Proxy({} as Pool, {
+  get(_target, prop) {
+    return (getPool() as unknown as Record<string | symbol, unknown>)[prop];
+  },
+});
 
 export default pool;
