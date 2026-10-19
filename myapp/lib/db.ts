@@ -39,9 +39,14 @@ function getPool(): Pool {
 
 // Lazy proxy — the Pool is created on first property access,
 // ensuring env vars are loaded before the connection is made.
+// Methods must be bound to the real Pool: pg-pool reassigns its own fields
+// (e.g. `this._clients = this._clients.filter(...)`), and with `this` set to
+// this proxy those writes would be lost and the pool would eventually hang.
 const pool = new Proxy({} as Pool, {
   get(_target, prop) {
-    return (getPool() as unknown as Record<string | symbol, unknown>)[prop];
+    const real = getPool();
+    const value = (real as unknown as Record<string | symbol, unknown>)[prop];
+    return typeof value === 'function' ? value.bind(real) : value;
   },
 });
 
