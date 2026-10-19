@@ -52,6 +52,14 @@ async function migrate() {
       ON speed_deliveries(session_id, delivery_no);
   `);
 
+  // Block Supabase's public REST API (anon/authenticated roles) from these tables.
+  // No policies are added: the app connects as the table owner, which bypasses RLS.
+  await pool.query(`
+    ALTER TABLE users            ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE speed_sessions   ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE speed_deliveries ENABLE ROW LEVEL SECURITY;
+  `);
+
   console.log('✅ Migration complete!');
   await pool.end();
 }
