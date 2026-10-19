@@ -70,24 +70,22 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   // Fetch stats for dashboard overview
-  const fetchStats = useCallback(async () => {
-    setLoadingStats(true);
-    try {
-      const res = await fetch('/api/admin/stats');
-      const json = await res.json();
-      if (json.success) {
-        setTotalUsers(json.data.totalUsers);
-        setLatestUsers(json.data.latestUsers);
-      }
-    } catch (err) {
-      console.error('Failed to fetch stats:', err);
-    } finally {
-      setLoadingStats(false);
-    }
+  // (loadingStats starts true, so this only clears it once the request settles.)
+  const fetchStats = useCallback(() => {
+    fetch('/api/admin/stats')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success) {
+          setTotalUsers(json.data.totalUsers);
+          setLatestUsers(json.data.latestUsers);
+        }
+      })
+      .catch((err) => console.error('Failed to fetch stats:', err))
+      .finally(() => setLoadingStats(false));
   }, []);
 
-  // Fetch all users for user management tab
-  const fetchAllUsers = useCallback(async () => {
+  // Fetch all users for user management tab (called when the tab is opened)
+  const fetchAllUsers = async () => {
     setLoadingUsers(true);
     try {
       const res = await fetch('/api/admin/users');
@@ -100,7 +98,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
     } finally {
       setLoadingUsers(false);
     }
-  }, []);
+  };
 
   // Fetch performance data for a specific user
   const fetchUserPerformance = async (userId: number) => {
@@ -167,11 +165,10 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
     fetchStats();
   }, [fetchStats]);
 
-  useEffect(() => {
-    if (activeTab === 'users') {
-      fetchAllUsers();
-    }
-  }, [activeTab, fetchAllUsers]);
+  const openUsersTab = () => {
+    setActiveTab('users');
+    fetchAllUsers();
+  };
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -184,7 +181,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
     setSelectedUser(null);
     setSessions([]);
     setOpenSessionNo(null);
-    setActiveTab('users');
+    openUsersTab();
   };
 
   const initials = admin.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -316,7 +313,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
               latestUsers={latestUsers}
               loading={loadingStats}
               onClickUserCount={navigateToUsers}
-              onClickUser={(userId) => { setActiveTab('users'); fetchUserPerformance(userId); }}
+              onClickUser={(userId) => { openUsersTab(); fetchUserPerformance(userId); }}
             />
           )}
           {activeTab === 'users' && (
