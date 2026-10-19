@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyToken } from '@/lib/jwt';
@@ -6,6 +7,7 @@ import AdminDashboardClient from './AdminDashboardClient';
 export const instant = false;
 
 export default async function AdminDashboardPage() {
+  await connection();
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;
   const payload = token ? verifyToken(token) : null;
