@@ -42,7 +42,7 @@ export async function GET(
     const user = result.rows[0];
 
     const sessions = await pool.query(
-      `SELECT id, started_at, ended_at, deliveries_count,
+      `SELECT session_no, started_at, ended_at, deliveries_count,
               avg_speed::float AS avg_speed,
               max_speed::float AS max_speed,
               min_speed::float AS min_speed

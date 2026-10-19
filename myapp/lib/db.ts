@@ -14,20 +14,35 @@ declare global {
 function getPool(): Pool {
   if (globalThis._pgPool) return globalThis._pgPool;
 
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
     throw new Error(
-      'DATABASE_URL is not set. Please add it to your .env.local file.\n' +
-      'Example: DATABASE_URL=postgresql://USER@localhost:5432/wrist_tracking'
+      'DATABASE_URL is not set. Add your Supabase connection string to .env.local.\n' +
+      'Example: DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres'
     );
   }
 
+  // pg lets an `sslmode` in the URL override the `ssl` option below, so drop it
+  // and configure TLS here instead.
+  let url: URL;
+  try {
+    url = new URL(databaseUrl);
+  } catch {
+    // Don't echo the URL: it contains the database password.
+    throw new Error(
+      'DATABASE_URL is not a valid URL. If the password contains special characters ' +
+      '(@ # / : ? % + ,), URL-encode them, e.g. "?" → %3F, "/" → %2F.'
+    );
+  }
+  url.searchParams.delete('sslmode');
+
+  // Supabase requires TLS. With DATABASE_CA_CERT (Supabase's CA, PEM) the server
+  // certificate is verified; without it the connection is encrypted but unverified.
+  const ca = process.env.DATABASE_CA_CERT?.replace(/\\n/g, '\n');
+
   const pool = new Pool({
-    connectionString,
-    ssl:
-      process.env.NODE_ENV === 'production'
-        ? { rejectUnauthorized: false }
-        : false,
+    connectionString: url.toString(),
+    ssl: ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false },
   });
 
   if (process.env.NODE_ENV !== 'production') {
