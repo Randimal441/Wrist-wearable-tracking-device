@@ -256,6 +256,87 @@
 .wtRecArchiveSummary { color: #b9adff; font-size: 12px; font-weight: 600; cursor: pointer; }
 .wtRecArchiveSummary + div { margin-top: 20px; }
 
+/* Follow the existing app theme; keep the original dark palette above intact. */
+[data-theme='light'] .wtRecDashboard {
+  --rec-bg: var(--bg-primary);
+  --rec-card: var(--bg-card);
+  --rec-border: var(--border);
+  --rec-text: var(--text-primary);
+  --rec-muted: var(--text-secondary);
+  --rec-purple: var(--accent-primary);
+  color-scheme: light;
+
+  & button:focus-visible, & select:focus-visible, & input:focus-visible,
+  & summary:focus-visible, & .wtRecTableWrap:focus-visible,
+  & .wtRecSelectableCard:focus-within, & .wtRecModeCard:focus-within { outline-color: var(--accent-primary); }
+  & .wtRecNavigation { scrollbar-color: var(--accent-secondary) transparent; }
+  & .wtRecTableWrap { scrollbar-color: var(--accent-secondary) var(--bg-secondary); }
+  & .wtRecNavButton:hover, & .wtRecReportTab:hover,
+  & .wtRecTable tbody tr:hover { background: var(--bg-secondary); color: var(--rec-text); }
+  & .wtRecNavActive { color: #fff; background: var(--accent-primary); border-color: var(--accent-primary); }
+  & .wtRecDemoNotice strong, & .wtRecTextButton, & .wtRecEyebrow,
+  & .wtRecPracticeDetails summary, & .wtRecSelectedLabel,
+  & .wtRecModeSelected, & .wtRecArchiveSummary { color: var(--accent-primary); }
+  & .wtRecDemoDot { background: var(--accent-primary); }
+  & .wtRecPurple { color: #6044bf; background: #eee8ff; }
+  & .wtRecCyan { color: #087c92; background: #e0f4f8; }
+  & .wtRecOrange { color: #a34c0f; background: #fff0df; }
+  & .wtRecLilac { color: #7541b0; background: #f1e7fc; }
+  & .wtRecCyanText { color: #087c92 !important; }
+  & .wtRecOrangeText { color: #a34c0f !important; }
+  & .wtRecLilacText { color: #7541b0 !important; }
+  & .wtRecBanner, & .wtRecNotice, & .wtRecInstruction, & .wtRecGenerateFooter {
+    background: #eee8ff; border-color: #c9bce9;
+  }
+  & .wtRecBanner p, & .wtRecNotice p, & .wtRecCardHeading > svg,
+  & .wtRecTable thead th, & .wtRecTable tbody td,
+  & .wtRecSteps li, & .wtRecPractice, & .wtRecModeInfo p { color: var(--rec-muted); }
+  & .wtRecPrimaryButton { color: #fff; background: var(--accent-primary); border-color: var(--accent-primary); }
+  & .wtRecPrimaryButton:hover { background: #4b42cc; border-color: #4b42cc; }
+  & .wtRecSecondaryButton, & .wtRecFullButton {
+    color: var(--rec-text); background: var(--bg-card); border-color: var(--rec-border);
+  }
+  & .wtRecSecondaryButton:hover, & .wtRecFullButton:hover {
+    background: var(--bg-secondary); border-color: var(--accent-secondary);
+  }
+  & .wtRecTextButton:hover { color: #4b42cc; }
+  & .wtRecTag, & .wtRecTechniqueStatus {
+    color: var(--rec-muted); background: var(--bg-secondary); border-color: var(--rec-border);
+  }
+  & .wtRecFocusBadge, & .wtRecReportTabActive {
+    color: #6044bf; background: #eee8ff; border-color: #c9bce9;
+  }
+  & .wtRecCompleted, & .wtRecTechniqueStatus[data-status='correct'] {
+    color: #166344; background: #e2f5eb; border-color: #a6d7be;
+  }
+  & .wtRecTechniqueStatus[data-status='incorrect'] {
+    color: #a34c0f; background: #fff0df; border-color: #e8c29f;
+  }
+  & .wtRecChartGrid { stroke: var(--rec-border); }
+  & .wtRecChartArea { fill: #087c92; }
+  & .wtRecChartLine { stroke: #087c92; }
+  & .wtRecChartPoint { fill: #087c92; }
+  & .wtRecChartSelected { fill: var(--accent-primary); stroke: #d6c9f4; }
+  & .wtRecChartLegend::before { background: #087c92; }
+  & .wtRecTable thead th, & .wtRecSteps, & .wtRecSessionInformation { background: var(--bg-secondary); }
+  & .wtRecTable tbody th, & .wtRecReportMetadata dd, & .wtRecHistoryMetadata dd,
+  & .wtRecBodyText, & .wtRecPractice strong, & .wtRecRecommendationList,
+  & .wtRecInstruction p, & .wtRecModeInfo strong, & .wtRecSessionInformation dd { color: var(--rec-text); }
+  & .wtRecNumeric { color: var(--rec-text) !important; }
+  & .wtRecDifference { color: var(--accent-primary) !important; }
+  & .wtRecSteps li > span { color: var(--rec-muted); background: #dce0ef; }
+  & .wtRecSteps li.wtRecStepActive { color: var(--accent-primary); }
+  & .wtRecSteps li.wtRecStepActive > span { color: #fff; background: var(--accent-primary); }
+  & .wtRecSelectableCard:hover, & .wtRecModeCard:hover { border-color: var(--accent-primary); }
+  & .wtRecSelectableCard input { accent-color: var(--accent-primary); }
+  & .wtRecSelectedCard { background: #eee8ff; border-color: var(--accent-primary); box-shadow: inset 0 0 0 1px var(--accent-primary); }
+  & .wtRecError { color: #a52840; background: #ffedf0; border-color: #e8b5bf; }
+  & .wtRecTrend, & .wtRecModeInfo { color: var(--rec-muted); background: var(--bg-secondary); border-color: var(--rec-border); }
+  & .wtRecSelectLabel select, & .wtRecDateInput { color: var(--rec-text); background: var(--input-bg); border-color: var(--rec-border); }
+  & .wtRecContributionTrack { background: #dce0ef; }
+  & .wtRecContributionTrack > span { background: var(--accent-primary); }
+}
+
 @container recommendations (max-width: 850px) {
   .wtRecKpiGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wtRecOverviewGrid { grid-template-columns: minmax(0, 1fr); }
