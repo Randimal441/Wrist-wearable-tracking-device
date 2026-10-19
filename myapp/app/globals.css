@@ -1079,3 +1079,13 @@ body {
     font-size: 0.8rem;
   }
 }
+
+/* Speed Status – clickable session rows */
+.speed-sessions-table tbody tr {
+  cursor: pointer;
+}
+.speed-sessions-table tbody tr:hover,
+.speed-sessions-table tbody tr:focus-visible {
+  background: var(--bg-card-hover, rgba(255, 255, 255, 0.04));
+  outline: none;
+}

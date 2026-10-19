@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '../../components/ThemeToggle';
 import PersonalizedRecommendation from './PersonalizedRecommendation';
+import SpeedStatus from './SpeedStatus';
 
 interface UserProps {
   user: { name: string; email: string };
@@ -206,7 +207,7 @@ export default function UserDashboardClient({ user }: UserProps) {
         {/* Page Content */}
         <div style={{ flex: 1, padding: '2rem', maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
           {activeTab === 'delivery' && <DeliveryPerformance />}
-          {activeTab === 'speed' && <ComingSoonTab label="Speed Status" />}
+          {activeTab === 'speed' && <SpeedStatus />}
           {activeTab === 'grip' && <ComingSoonTab label="Grip Status" />}
           {activeTab === 'wrist' && <WristAngleStatus />}
           {activeTab === 'recommendations' && <PersonalizedRecommendation />}
