@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 export interface SessionSummary {
-    id: number;
+    session_no: number;
     started_at: string;
     ended_at: string;
     deliveries_count: number;
@@ -67,13 +67,13 @@ export default function SpeedStatus() {
         loadSessions();
     }, [loadSessions]);
 
-    const openSession = async (id: number) => {
+    const openSession = async (sessionNo: number) => {
         setView('detail');
         setSelected(null);
         setDetailLoading(true);
         setError('');
         try {
-            const res = await fetch(`/api/user/sessions/${id}`);
+            const res = await fetch(`/api/user/sessions/${sessionNo}`);
             const json = await res.json();
             if (!json.success) throw new Error(json.message);
             setSelected(json.data);
@@ -146,6 +146,7 @@ export default function SpeedStatus() {
                         <table className="wrist-history-table speed-sessions-table">
                             <thead>
                                 <tr>
+                                    <th>Session</th>
                                     <th>Date</th>
                                     <th>Duration</th>
                                     <th>Deliveries</th>
@@ -157,18 +158,19 @@ export default function SpeedStatus() {
                             <tbody>
                                 {sessions.map((s) => (
                                     <tr
-                                        key={s.id}
+                                        key={s.session_no}
                                         tabIndex={0}
                                         role="button"
-                                        onClick={() => openSession(s.id)}
+                                        onClick={() => openSession(s.session_no)}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' || e.key === ' ') {
                                                 e.preventDefault();
-                                                openSession(s.id);
+                                                openSession(s.session_no);
                                             }
                                         }}
                                     >
-                                        <td><strong>{formatDateTime(s.started_at)}</strong></td>
+                                        <td><strong>#{s.session_no}</strong></td>
+                                        <td>{formatDateTime(s.started_at)}</td>
                                         <td>{formatDuration(s.started_at, s.ended_at)}</td>
                                         <td>{s.deliveries_count}</td>
                                         <td style={{ color: 'var(--accent-teal)', fontWeight: 700 }}>{s.avg_speed.toFixed(1)}</td>
@@ -298,7 +300,7 @@ export function SessionDetailView({
             {session && (
                 <>
                     <section className="glass-card" style={{ padding: '1.5rem' }}>
-                        <span className="eyebrow">Session</span>
+                        <span className="eyebrow">Session #{session.session_no}</span>
                         <h3 className="rec-section-title">{formatDateTime(session.started_at)}</h3>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
                             Duration {formatDuration(session.started_at, session.ended_at)}

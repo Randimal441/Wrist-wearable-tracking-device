@@ -59,7 +59,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
   const [allUsers, setAllUsers] = useState<UserRecord[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
-  const [openSessionId, setOpenSessionId] = useState<number | null>(null);
+  const [openSessionNo, setOpenSessionNo] = useState<number | null>(null);
   const [sessionDetail, setSessionDetail] = useState<SessionDetail | null>(null);
   const [loadingSession, setLoadingSession] = useState(false);
   const [sessionError, setSessionError] = useState('');
@@ -111,7 +111,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
       if (json.success) {
         setSelectedUser(json.data.user);
         setSessions(json.data.sessions);
-        setOpenSessionId(null);
+        setOpenSessionNo(null);
         setSessionDetail(null);
       }
     } catch (err) {
@@ -122,13 +122,13 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
   };
 
   // Fetch one speed session (with its deliveries) for the selected user
-  const fetchSession = async (userId: number, sessionId: number) => {
-    setOpenSessionId(sessionId);
+  const fetchSession = async (userId: number, sessionNo: number) => {
+    setOpenSessionNo(sessionNo);
     setSessionDetail(null);
     setSessionError('');
     setLoadingSession(true);
     try {
-      const res = await fetch(`/api/admin/users/${userId}/sessions/${sessionId}`);
+      const res = await fetch(`/api/admin/users/${userId}/sessions/${sessionNo}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
       setSessionDetail(json.data);
@@ -152,7 +152,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
         if (selectedUser?.id === userId) {
           setSelectedUser(null);
           setSessions([]);
-          setOpenSessionId(null);
+          setOpenSessionNo(null);
         }
         setDeleteConfirm(null);
       }
@@ -183,7 +183,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
   const navigateToUsers = () => {
     setSelectedUser(null);
     setSessions([]);
-    setOpenSessionId(null);
+    setOpenSessionNo(null);
     setActiveTab('users');
   };
 
@@ -292,7 +292,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
             <h2 style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--text-primary)' }}>
               {activeTab === 'overview' && 'Admin Overview'}
               {activeTab === 'users' && (selectedUser
-                ? `${selectedUser.name} — ${openSessionId !== null ? 'Session' : 'Speed Status'}`
+                ? `${selectedUser.name} — ${openSessionNo !== null ? 'Session' : 'Speed Status'}`
                 : 'User Management')}
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '1px' }}>
@@ -320,12 +320,12 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
             />
           )}
           {activeTab === 'users' && (
-            selectedUser && openSessionId !== null ? (
+            selectedUser && openSessionNo !== null ? (
               <SessionDetailView
                 session={sessionDetail}
                 loading={loadingSession}
                 error={sessionError}
-                onBack={() => { setOpenSessionId(null); setSessionError(''); }}
+                onBack={() => { setOpenSessionNo(null); setSessionError(''); }}
               />
             ) : selectedUser ? (
               <UserPerformanceView
@@ -335,7 +335,7 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
                 deleting={deleting}
                 deleteConfirm={deleteConfirm}
                 onBack={() => { setSelectedUser(null); setSessions([]); }}
-                onSelectSession={(sessionId) => fetchSession(selectedUser.id, sessionId)}
+                onSelectSession={(sessionNo) => fetchSession(selectedUser.id, sessionNo)}
                 onDelete={handleDeleteUser}
                 onDeleteConfirm={setDeleteConfirm}
               />
@@ -693,7 +693,7 @@ function UserPerformanceView({
   deleting: boolean;
   deleteConfirm: number | null;
   onBack: () => void;
-  onSelectSession: (sessionId: number) => void;
+  onSelectSession: (sessionNo: number) => void;
   onDelete: (userId: number) => void;
   onDeleteConfirm: (userId: number | null) => void;
 }) {
@@ -859,6 +859,7 @@ function UserPerformanceView({
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                <th style={thStyle}>Session</th>
                 <th style={thStyle}>Date</th>
                 <th style={thStyle}>Duration</th>
                 <th style={thStyle}>Deliveries</th>
@@ -871,27 +872,28 @@ function UserPerformanceView({
             <tbody>
               {sessions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                     This user has no speed sessions yet
                   </td>
                 </tr>
               ) : (
                 sessions.map((p) => (
                   <tr
-                    key={p.id}
+                    key={p.session_no}
                     tabIndex={0}
                     role="button"
                     style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer', transition: 'background 0.15s' }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-card-hover)'; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                    onClick={() => onSelectSession(p.id)}
+                    onClick={() => onSelectSession(p.session_no)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        onSelectSession(p.id);
+                        onSelectSession(p.session_no);
                       }
                     }}
                   >
+                    <td style={{ ...tdStyle, fontWeight: 700, color: 'var(--text-primary)' }}>#{p.session_no}</td>
                     <td style={tdStyle}>{formatDateTime(p.started_at)}</td>
                     <td style={tdStyle}>{formatDuration(p.started_at, p.ended_at)}</td>
                     <td style={tdStyle}>{p.deliveries_count}</td>

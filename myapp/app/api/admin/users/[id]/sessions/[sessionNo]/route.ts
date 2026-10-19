@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import pool from '@/lib/db';
 
-// GET /api/admin/users/[id]/sessions/[sessionId] — one speed session with its deliveries
+// GET /api/admin/users/[id]/sessions/[sessionNo] — one of a user's speed sessions with its deliveries
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string; sessionId: string }> }
+  { params }: { params: Promise<{ id: string; sessionNo: string }> }
 ) {
   const token = req.cookies.get('auth_token')?.value;
   const payload = token ? verifyToken(token) : null;
@@ -17,10 +17,10 @@ export async function GET(
     );
   }
 
-  const { id, sessionId } = await params;
+  const { id, sessionNo } = await params;
   const userId = Number(id);
-  const sessionIdNum = Number(sessionId);
-  if (!Number.isInteger(userId) || !Number.isInteger(sessionIdNum)) {
+  const sessionNum = Number(sessionNo);
+  if (!Number.isInteger(userId) || !Number.isInteger(sessionNum)) {
     return NextResponse.json(
       { success: false, message: 'Session not found.' },
       { status: 404 }
@@ -29,13 +29,13 @@ export async function GET(
 
   try {
     const session = await pool.query(
-      `SELECT id, started_at, ended_at, deliveries_count,
+      `SELECT session_no, started_at, ended_at, deliveries_count,
               avg_speed::float AS avg_speed,
               max_speed::float AS max_speed,
               min_speed::float AS min_speed
        FROM speed_sessions
-       WHERE id = $1 AND user_id = $2`,
-      [sessionIdNum, userId]
+       WHERE user_id = $1 AND session_no = $2`,
+      [userId, sessionNum]
     );
 
     if (session.rows.length === 0) {
@@ -48,9 +48,9 @@ export async function GET(
     const deliveries = await pool.query(
       `SELECT delivery_no, speed_kmh::float AS speed_kmh
        FROM speed_deliveries
-       WHERE session_id = $1
+       WHERE user_id = $1 AND session_no = $2
        ORDER BY delivery_no`,
-      [sessionIdNum]
+      [userId, sessionNum]
     );
 
     return NextResponse.json({
