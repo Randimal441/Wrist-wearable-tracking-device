@@ -36,13 +36,19 @@ function getPool(): Pool {
   }
   url.searchParams.delete('sslmode');
 
-  // Supabase requires TLS. With DATABASE_CA_CERT (Supabase's CA, PEM) the server
-  // certificate is verified; without it the connection is encrypted but unverified.
+  // Supabase requires TLS, while a local PostgreSQL server commonly has TLS
+  // disabled. DATABASE_SSL can explicitly override the default for either case.
   const ca = process.env.DATABASE_CA_CERT?.replace(/\\n/g, '\n');
+  const isLocalDatabase = ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
+  const useSsl = process.env.DATABASE_SSL
+    ? process.env.DATABASE_SSL.toLowerCase() === 'true'
+    : !isLocalDatabase;
 
   const pool = new Pool({
     connectionString: url.toString(),
-    ssl: ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false },
+    ...(useSsl
+      ? { ssl: ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false } }
+      : {}),
   });
 
   if (process.env.NODE_ENV !== 'production') {
