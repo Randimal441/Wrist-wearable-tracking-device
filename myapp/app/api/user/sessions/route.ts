@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await pool.query(
-      `SELECT id, started_at, ended_at, deliveries_count,
+      `SELECT session_no, started_at, ended_at, deliveries_count,
               avg_speed::float AS avg_speed,
               max_speed::float AS max_speed,
               min_speed::float AS min_speed
@@ -87,11 +87,24 @@ export async function POST(req: NextRequest) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+
+    // Lock the user's row so two saves at once can't pick the same session number.
+    const user = await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [payload.userId]);
+    if (user.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return NextResponse.json(
+        { success: false, message: 'User not found.' },
+        { status: 404 }
+      );
+    }
+
     const session = await client.query(
       `INSERT INTO speed_sessions
-         (user_id, started_at, ended_at, deliveries_count, avg_speed, max_speed, min_speed)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id`,
+         (user_id, session_no, started_at, ended_at, deliveries_count, avg_speed, max_speed, min_speed)
+       SELECT $1, COALESCE(MAX(session_no), 0) + 1, $2, $3, $4, $5, $6, $7
+       FROM speed_sessions
+       WHERE user_id = $1
+       RETURNING session_no`,
       [
         payload.userId,
         startedAt,
@@ -102,17 +115,17 @@ export async function POST(req: NextRequest) {
         Math.min(...values),
       ]
     );
-    const sessionId = session.rows[0].id as number;
+    const sessionNo = session.rows[0].session_no as number;
 
     await client.query(
-      `INSERT INTO speed_deliveries (session_id, delivery_no, speed_kmh)
-       SELECT $1, t.ord, t.speed
-       FROM unnest($2::numeric[]) WITH ORDINALITY AS t(speed, ord)`,
-      [sessionId, values]
+      `INSERT INTO speed_deliveries (user_id, session_no, delivery_no, speed_kmh)
+       SELECT $1, $2, t.ord, t.speed
+       FROM unnest($3::numeric[]) WITH ORDINALITY AS t(speed, ord)`,
+      [payload.userId, sessionNo, values]
     );
     await client.query('COMMIT');
 
-    return NextResponse.json({ success: true, data: { id: sessionId } }, { status: 201 });
+    return NextResponse.json({ success: true, data: { sessionNo } }, { status: 201 });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Save session error:', error);

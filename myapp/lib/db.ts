@@ -17,8 +17,8 @@ function getPool(): Pool {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error(
-      'DATABASE_URL is not set. Please add it to your .env.local file.\n' +
-      'Example: DATABASE_URL=postgresql://USER@localhost:5432/wrist_tracking'
+      'DATABASE_URL is not set. Add your Supabase connection string to .env.local.\n' +
+      'Example: DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres'
     );
   }
 
