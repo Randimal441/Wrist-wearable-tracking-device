@@ -213,7 +213,6 @@ export default function UserDashboardClient({ user }: UserProps) {
         <div style={{ flex: 1, padding: '2rem', maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
           {activeTab === 'delivery' && <DeliveryPerformance />}
           {activeTab === 'Device Register' && <DeviceRegister />}
-          {activeTab === 'speed' && <ComingSoonTab label="Speed Status" />}
           {activeTab === 'speed' && <SpeedStatus onGoToLive={() => selectTab('delivery')} />}
           {activeTab === 'grip' && <ComingSoonTab label="Grip Status" />}
           {activeTab === 'wrist' && <WristAngleStatusPage />}
