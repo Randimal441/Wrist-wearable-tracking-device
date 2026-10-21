@@ -199,14 +199,11 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0, boxShadow: '0 4px 12px rgba(251,146,60,0.35)',
             }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
+              <img src="/smart-glove-logo.png" alt="Smart Glove logo" width="36" height="36" style={{ borderRadius: '10px', objectFit: 'cover' }} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-                Wrist<span style={{ color: '#fb923c' }}>Track</span>
+                Smart <span style={{ color: '#fb923c' }}>Glove</span>
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--accent-orange)', marginTop: '-1px', fontWeight: 600 }}>Admin Panel</div>
             </div>
@@ -301,7 +298,6 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
               <div className="pulse-dot" style={{ width: '6px', height: '6px' }} />
               System Normal
             </div>
-            <ThemeToggle />
           </div>
         </header>
 

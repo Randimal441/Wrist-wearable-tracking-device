@@ -6,7 +6,7 @@ const rl = readline.createInterface({ input: process.stdin, output: process.stdo
 const question = (q: string) => new Promise<string>((resolve) => rl.question(q, resolve));
 
 async function seedAdmin() {
-  console.log('\n🔑  Wrist Tracking — Admin Seed Script\n');
+  console.log('\n🔑  Smart Glove — Admin Seed Script\n');
   console.log('This will create the admin account in your database.\n');
 
   const name = await question('Admin name     : ');

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import ThemeToggle from '../../components/ThemeToggle';
 
 interface FormState {
   name: string;
@@ -105,10 +104,6 @@ export default function SignupPage() {
 
   return (
     <main className="bg-mesh min-h-screen flex items-center justify-center p-4">
-      {/* Theme toggle — floating top-right */}
-      <div style={{ position: 'fixed', top: '1.25rem', right: '1.25rem', zIndex: 50 }}>
-        <ThemeToggle />
-      </div>
       {/* Background glow orbs */}
       <div aria-hidden="true" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         <div style={{
@@ -133,13 +128,10 @@ export default function SignupPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 4px 20px rgba(108,99,255,0.4)',
             }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="5" y="2" width="14" height="20" rx="7" />
-                <path d="M12 6v6l3 3" />
-              </svg>
+              <img src="/smart-glove-logo.png" alt="Smart Glove logo" width="44" height="44" style={{ borderRadius: '12px', objectFit: 'cover' }} />
             </div>
             <span style={{ fontSize: '1.375rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Wrist<span style={{ color: 'var(--accent-secondary)' }}>Track</span>
+              Smart <span style={{ color: 'var(--accent-secondary)' }}>Glove</span>
             </span>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Research IoT Tracking System</p>
@@ -152,7 +144,7 @@ export default function SignupPage() {
               Create your account
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Join WristTrack and start monitoring your health data
+              Join Smart Glove and start monitoring your health data
             </p>
           </div>
 

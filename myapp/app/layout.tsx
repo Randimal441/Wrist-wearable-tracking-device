@@ -3,10 +3,11 @@ import './globals.css';
 import { ThemeProvider } from './context/ThemeContext';
 
 export const metadata: Metadata = {
-  title: 'WristTrack — Wearable Tracking System',
+  title: 'Smart Glove — Wearable Tracking System',
   description:
     'Research-grade wrist-wearable IoT tracking device dashboard. Monitor your health metrics in real time.',
-  keywords: ['wrist tracker', 'IoT', 'health monitoring', 'wearable device'],
+  keywords: ['smart glove', 'IoT', 'health monitoring', 'wearable device'],
+  icons: { icon: '/smart-glove-logo.png' },
 };
 
 export default function RootLayout({
