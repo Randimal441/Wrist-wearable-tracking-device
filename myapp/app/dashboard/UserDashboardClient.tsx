@@ -74,6 +74,16 @@ export default function UserDashboardClient({ user }: UserProps) {
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '-1px' }}>User Portal</div>
             </div>
             <ThemeToggle size="sm" />
+            <button
+              type="button"
+              className="mobile-sidebar-close"
+              aria-label="Close navigation menu"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -213,7 +223,6 @@ export default function UserDashboardClient({ user }: UserProps) {
         <div style={{ flex: 1, padding: '2rem', maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
           {activeTab === 'delivery' && <DeliveryPerformance />}
           {activeTab === 'Device Register' && <DeviceRegister />}
-          {activeTab === 'speed' && <ComingSoonTab label="Speed Status" />}
           {activeTab === 'speed' && <SpeedStatus onGoToLive={() => selectTab('delivery')} />}
           {activeTab === 'grip' && <ComingSoonTab label="Grip Status" />}
           {activeTab === 'wrist' && <WristAngleStatusPage />}
