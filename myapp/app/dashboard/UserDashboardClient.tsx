@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '../../components/ThemeToggle';
 import PersonalizedRecommendation from './PersonalizedRecommendation';
+import ProfileSettings from './ProfileSettings';
 import SpeedStatus from './SpeedStatus';
 import WristAngleStatusPage from './WristAngleStatusPage';
 
@@ -208,7 +209,7 @@ export default function UserDashboardClient({ user }: UserProps) {
           {activeTab === 'grip' && <ComingSoonTab label="Grip Status" />}
           {activeTab === 'wrist' && <WristAngleStatusPage />}
           {activeTab === 'recommendations' && <PersonalizedRecommendation />}
-          {activeTab === 'settings' && <ComingSoonTab label="Account Settings" />}
+          {activeTab === 'settings' && <ProfileSettings user={user} onSaved={() => router.refresh()} />}
         </div>
       </main>
     </div>
