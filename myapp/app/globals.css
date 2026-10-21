@@ -1079,3 +1079,28 @@ body {
     font-size: 0.8rem;
   }
 }
+
+/* Speed Status – live session panel on the Delivery Performance page */
+.speed-live-panel { margin-bottom: 1.25rem; position: relative; z-index: 1; }
+.speed-live-heading { align-items: center; }
+.speed-live-heading .btn-primary { flex-shrink: 0; }
+.speed-live-panel .wrist-section-heading:only-child { margin-bottom: 0; }
+.speed-live-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1.25rem; }
+.speed-live-metrics .baseline-metric { min-height: 100px; }
+@media (max-width: 760px) {
+  .speed-live-heading { align-items: flex-start; }
+  /* "km/h" is wider than the wrist page's "°", so shrink the hero numbers on phones */
+  .speed-hero .wrist-hero-metrics strong { font-size: 1.3rem; }
+  .speed-hero .wrist-hero-metrics strong small { font-size: .7rem; }
+  .speed-live-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Speed Status – clickable session rows */
+.speed-sessions-table tbody tr {
+  cursor: pointer;
+}
+.speed-sessions-table tbody tr:hover,
+.speed-sessions-table tbody tr:focus-visible {
+  background: var(--bg-card-hover, rgba(255, 255, 255, 0.04));
+  outline: none;
+}

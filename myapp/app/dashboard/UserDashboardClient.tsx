@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '../../components/ThemeToggle';
 import PersonalizedRecommendation from './PersonalizedRecommendation';
+import SpeedStatus, { LiveSessionPanel } from './SpeedStatus';
 import WristAngleStatusPage from './WristAngleStatusPage';
 
 interface UserProps {
@@ -216,6 +217,7 @@ export default function UserDashboardClient({ user }: UserProps) {
           {activeTab === 'delivery' && <DeliveryPerformance />}
           {activeTab === 'Device Register' && <DeviceRegister />}
           {activeTab === 'speed' && <ComingSoonTab label="Speed Status" />}
+          {activeTab === 'speed' && <SpeedStatus onGoToLive={() => selectTab('delivery')} />}
           {activeTab === 'grip' && <ComingSoonTab label="Grip Status" />}
           {activeTab === 'wrist' && <WristAngleStatusPage />}
           {activeTab === 'recommendations' && <PersonalizedRecommendation />}
@@ -268,6 +270,8 @@ function DeliveryPerformance() {
         </div>
         <div className="badge badge-green"><div className="pulse-dot" />Data received</div>
       </div>
+
+      <LiveSessionPanel />
 
       <div className="delivery-columns">
         <DeliveryCard title="Current Delivery" metrics={latestDelivery} />

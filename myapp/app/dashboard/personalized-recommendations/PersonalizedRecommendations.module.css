@@ -1,0 +1,382 @@
+.wtRecDashboard {
+  --rec-bg: #0d1120;
+  --rec-card: #151b2d;
+  --rec-border: #283148;
+  --rec-text: #edf1fa;
+  --rec-muted: #a1adc3;
+  --rec-purple: #8170f5;
+  container: recommendations / inline-size;
+  width: 100%;
+  min-width: 0;
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--rec-bg);
+  color: var(--rec-text);
+  color-scheme: dark;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.wtRecDashboard *, .wtRecDashboard *::before, .wtRecDashboard *::after { box-sizing: border-box; }
+.wtRecDashboard h3, .wtRecDashboard h4, .wtRecDashboard h5, .wtRecDashboard p, .wtRecDashboard dl, .wtRecDashboard figure { margin: 0; }
+.wtRecDashboard button, .wtRecDashboard select, .wtRecDashboard input { font: inherit; }
+.wtRecDashboard button { cursor: pointer; }
+.wtRecDashboard button:focus-visible, .wtRecDashboard select:focus-visible, .wtRecDashboard input:focus-visible,
+.wtRecDashboard summary:focus-visible, .wtRecTableWrap:focus-visible {
+  outline: 2px solid #b9adff;
+  outline-offset: 4px;
+}
+.wtRecDashboard h4 { color: var(--rec-text); font-size: 15px; font-weight: 650; line-height: 1.45; }
+.wtRecDashboard h5 { color: var(--rec-text); font-size: 14px; font-weight: 650; }
+.wtRecDashboard svg { flex-shrink: 0; }
+
+.wtRecNavigation {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px 3px 13px;
+  border-bottom: 1px solid var(--rec-border);
+  scrollbar-width: thin;
+  scrollbar-color: #554a9c transparent;
+}
+.wtRecNavButton, .wtRecNavActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  padding: 9px 11px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--rec-muted);
+  white-space: nowrap;
+  font-size: 12px !important;
+  font-weight: 550;
+}
+.wtRecNavButton:hover { background: #1b2237; color: var(--rec-text); }
+.wtRecNavActive { color: #f4f0ff; background: #6e5be3; border-color: #9384f5; }
+.wtRecNavButton svg, .wtRecNavActive svg { width: 15px; height: 15px; }
+.wtRecDemoNotice { display: flex; align-items: flex-start; gap: 9px; padding: 15px 0 0; color: var(--rec-muted); font-size: 11px; }
+.wtRecDemoNotice strong { color: #c5baff; font-weight: 600; }
+.wtRecDemoDot { flex: 0 0 6px; width: 6px; height: 6px; margin-top: 6px; border-radius: 50%; background: #a394fa; }
+.wtRecScreen { display: flex; flex-direction: column; gap: 20px; min-width: 0; margin-top: 27px; }
+.wtRecScreenHeading { margin-bottom: 3px; }
+.wtRecScreenHeading h3 { color: var(--rec-text); font-size: clamp(20px, 2vw, 25px); font-weight: 700; letter-spacing: -0.6px; line-height: 1.3; scroll-margin-top: 110px; }
+.wtRecScreenHeading h3:focus { outline: none; }
+.wtRecScreenHeading p { margin-top: 7px; color: var(--rec-muted); font-size: 13px; }
+
+.wtRecKpiGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.wtRecKpiCard { min-width: 0; padding: 19px 17px; background: var(--rec-card); border: 1px solid var(--rec-border); border-radius: 13px; }
+.wtRecMetricIcon { display: inline-flex; justify-content: center; align-items: center; flex-shrink: 0; width: 35px; height: 35px; border-radius: 9px; }
+.wtRecPurple { color: #b2a5ff; background: #292347; }
+.wtRecCyan { color: #4ed5ef; background: #17333f; }
+.wtRecOrange { color: #ffaf70; background: #3b2b28; }
+.wtRecLilac { color: #c3a5ff; background: #302643; }
+.wtRecCyanText { color: #64dcef !important; }
+.wtRecOrangeText { color: #ffaf70 !important; }
+.wtRecLilacText { color: #c3a5ff !important; }
+.wtRecMetricLabel { margin-top: 13px !important; color: var(--rec-muted); font-size: 11px; }
+.wtRecMetricValue { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px; margin-top: 5px !important; font-size: 27px; font-weight: 700; line-height: 1.2; letter-spacing: -0.7px; font-variant-numeric: tabular-nums; }
+.wtRecMetricValue span { color: var(--rec-muted); font-size: 10px; font-weight: 400; letter-spacing: 0; }
+.wtRecContext { color: var(--rec-muted); font-size: 11px; }
+.wtRecKpiGrid + .wtRecContext { margin-top: -10px; }
+.wtRecBanner { display: flex; align-items: center; gap: 16px; padding: 23px; border: 1px solid #4c3d78; border-radius: 14px; background: #211c37; }
+.wtRecBannerIcon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; }
+.wtRecBannerIcon svg { width: 22px; height: 22px; }
+.wtRecBanner > div { flex: 1; min-width: 0; }
+.wtRecBanner h4 { font-size: 16px; }
+.wtRecBanner p { max-width: 460px; margin-top: 6px; color: #b9b1d0; font-size: 12px; }
+.wtRecBanner .wtRecPrimaryButton { max-width: 260px; }
+.wtRecPrimaryButton, .wtRecSecondaryButton, .wtRecFullButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 39px;
+  padding: 9px 15px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 12px !important;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+.wtRecPrimaryButton { color: #fff; border-color: #8e7cf4; background: #705ce1; }
+.wtRecPrimaryButton:hover { background: #8169ee; border-color: #a496ff; }
+.wtRecSecondaryButton, .wtRecFullButton { color: #d7deed; background: #1c2439; border-color: #35405a; }
+.wtRecSecondaryButton:hover, .wtRecFullButton:hover { background: #28324b; border-color: #596884; }
+.wtRecFullButton { width: 100%; margin-top: 16px; }
+.wtRecTextButton { display: inline-flex; align-items: center; gap: 7px; padding: 6px 0 6px 9px; color: #b9adff; background: none; border: 0; font-size: 11px !important; font-weight: 600; }
+.wtRecTextButton:hover { color: #ddd5ff; text-decoration: underline; text-underline-offset: 4px; }
+.wtRecOverviewGrid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 18px; align-items: stretch; }
+.wtRecCard { min-width: 0; padding: 21px; background: var(--rec-card); border: 1px solid var(--rec-border); border-radius: 14px; }
+.wtRecCardHeading { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 19px; }
+.wtRecCardHeading p { color: var(--rec-muted); font-size: 11px; margin-top: 4px; }
+.wtRecCardHeading > svg { color: #93a0bd; }
+.wtRecTag, .wtRecFocusBadge, .wtRecCompleted { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; gap: 5px; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 550; white-space: nowrap; }
+.wtRecTag { color: #acb7cc; background: #222b40; border: 1px solid #313b52; }
+.wtRecFocusBadge { color: #c7baff; background: #30264b; border: 1px solid #55417b; }
+.wtRecCompleted { color: #77dfb6; background: #19382f; border: 1px solid #245342; }
+.wtRecRow { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+.wtRecMuted { color: var(--rec-muted); font-size: 12px; font-weight: 400; }
+.wtRecRecentList { display: flex; flex-direction: column; }
+.wtRecRecentSession { padding: 14px 0; border-bottom: 1px solid var(--rec-border); }
+.wtRecRecentSession:first-child { padding-top: 0; }
+.wtRecRecentSession:last-child { padding-bottom: 0; border-bottom: 0; }
+.wtRecRecentSession > p { margin: 5px 0; font-size: 11px; }
+.wtRecRecentSession .wtRecCyanText { font-size: 14px; font-weight: 600; }
+.wtRecRecentSession .wtRecCyanText .wtRecMuted { font-size: 10px; }
+.wtRecChart { width: 100%; min-width: 0; margin-top: 12px !important; }
+.wtRecChart svg { display: block; width: 100%; max-width: 100%; height: auto; }
+.wtRecChart text { fill: var(--rec-muted); font-size: 12px; font-family: inherit; }
+.wtRecChartGrid { stroke: #2a344a; stroke-dasharray: 4 5; }
+.wtRecChartArea { fill: #22d3ee; opacity: 0.045; }
+.wtRecChartLine { fill: none; stroke: #53d2e9; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.wtRecChartPoint { fill: #53d2e9; stroke: var(--rec-card); stroke-width: 2; }
+.wtRecChartSelected { fill: #b6a1ff; stroke: #392d61; stroke-width: 3; }
+.wtRecChart figcaption { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--rec-border); color: var(--rec-muted); font-size: 10px; }
+.wtRecChartLegend { display: inline-flex; align-items: center; gap: 7px; }
+.wtRecChartLegend::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #53d2e9; }
+
+.wtRecSessionList, .wtRecSelectionGrid, .wtRecHistoryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px; }
+.wtRecSessionIdentity { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.wtRecSessionMetrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.wtRecSessionMetrics dt { color: var(--rec-muted); font-size: 10px; }
+.wtRecSessionMetrics dd { margin: 5px 0 0; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.wtRecSessionMetrics dd span { font-size: 9px; font-weight: 400; }
+.wtRecCardFooter { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-top: 20px; padding-top: 17px; border-top: 1px solid var(--rec-border); }
+.wtRecToolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.wtRecTableWrap { width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; border: 1px solid var(--rec-border); border-radius: 9px; scrollbar-width: thin; scrollbar-color: #554a9c #171e31; }
+.wtRecTable { width: 100%; min-width: 610px; border-collapse: collapse; text-align: left; font-size: 12px; }
+.wtRecTable th, .wtRecTable td { padding: 14px 16px; border-bottom: 1px solid var(--rec-border); vertical-align: middle; }
+.wtRecTable thead th { background: #1c2438; color: #abb6cc; font-size: 10px; font-weight: 550; white-space: nowrap; }
+.wtRecTable tbody th { color: #d9dfed; font-size: 12px; font-weight: 500; }
+.wtRecTable tbody td { color: #acb8cd; }
+.wtRecTable tbody tr:last-child > * { border-bottom: 0; }
+.wtRecTable tbody tr:hover { background: #192238; }
+.wtRecNumeric { white-space: nowrap; font-variant-numeric: tabular-nums; color: #e0e6f5 !important; }
+.wtRecDifference { white-space: nowrap; font-variant-numeric: tabular-nums; color: #c7baff !important; font-weight: 600; }
+.wtRecSteps { display: flex; justify-content: center; align-items: center; gap: 24px; padding: 16px; margin: 0; list-style: none; border: 1px solid var(--rec-border); background: #12182a; border-radius: 11px; }
+.wtRecSteps li { display: flex; align-items: center; gap: 9px; color: #a3acc0; font-size: 12px; }
+.wtRecSteps li > span { display: flex; align-items: center; justify-content: center; width: 25px; height: 25px; border-radius: 50%; background: #253049; color: #a8b3c9; font-size: 11px; }
+.wtRecSteps li.wtRecStepActive { color: #e1d9ff; }
+.wtRecSteps li.wtRecStepActive > span { color: #f2ecff; background: #6752cf; }
+.wtRecSelectionFieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.wtRecSelectionFieldset legend { margin-bottom: 16px; color: var(--rec-text); font-size: 14px; font-weight: 600; }
+.wtRecSelectionFieldset legend span { color: var(--rec-muted); font-size: 11px; font-weight: 400; }
+.wtRecSelectableCard { display: block; min-width: 0; padding: 20px; background: var(--rec-card); border: 1px solid var(--rec-border); border-radius: 13px; cursor: pointer; }
+.wtRecSelectableCard:hover { border-color: #6a5e9a; }
+.wtRecSelectableCard:focus-within { outline: 2px solid #b9adff; outline-offset: 3px; }
+.wtRecSelectableCard input { width: 18px; height: 18px; margin-top: 3px; accent-color: #a08aff; cursor: pointer; }
+.wtRecSelectedCard { border-color: #9b83ff; background: #241e3b; box-shadow: inset 0 0 0 1px #9b83ff; }
+.wtRecSelectionFooter { display: flex; align-items: center; justify-content: space-between; gap: 9px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rec-border); }
+.wtRecSelectedLabel { color: #c5b6ff; font-size: 11px; font-weight: 600; }
+.wtRecSelectionFooter .wtRecMuted { font-size: 11px; }
+.wtRecGenerateFooter { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 20px; background: #191c32; border: 1px solid #3d365a; border-radius: 12px; }
+.wtRecGenerateFooter strong { font-size: 13px; font-weight: 600; }
+.wtRecGenerateFooter p { margin-top: 4px; color: var(--rec-muted); font-size: 11px; }
+.wtRecError { margin-top: 14px !important; padding: 12px; border: 1px solid #743b49; border-radius: 8px; background: #351e2c; color: #ffb8c2; font-size: 12px; }
+
+.wtRecEyebrow { display: block; margin-bottom: 6px; color: #b2a4ec; font-size: 10px; letter-spacing: 0.9px; text-transform: uppercase; font-weight: 600; }
+.wtRecReportMetadata { display: grid; grid-template-columns: 0.7fr 1fr 1fr 2fr; gap: 18px; padding-top: 15px; margin-bottom: 14px !important; border-top: 1px solid var(--rec-border); }
+.wtRecReportMetadata dt, .wtRecHistoryMetadata dt { color: var(--rec-muted); font-size: 10px; }
+.wtRecReportMetadata dd, .wtRecHistoryMetadata dd { margin: 4px 0 0; color: #d9dfed; font-size: 12px; }
+.wtRecReportTabs { display: flex; gap: 7px; max-width: 100%; overflow-x: auto; padding: 4px 3px 12px; border-bottom: 1px solid var(--rec-border); }
+.wtRecReportTab, .wtRecReportTabActive { flex-shrink: 0; padding: 8px 15px; border-radius: 7px; border: 1px solid transparent; background: none; color: var(--rec-muted); font-size: 12px !important; }
+.wtRecReportTab:hover { background: #1f2840; color: #e3dbff; }
+.wtRecReportTabActive { color: #d5c7ff; background: #2a2343; border-color: #534174; }
+.wtRecGuidanceList { display: flex; flex-direction: column; gap: 17px; }
+.wtRecBodyText { color: #d4dcec; font-size: 13px; line-height: 1.8; margin-bottom: 13px !important; }
+.wtRecTrend { margin: 13px 0 !important; padding: 10px 13px; color: #b8c5de; background: #1c253b; border-radius: 7px; font-size: 11px; }
+.wtRecPracticeDetails { margin-top: 18px; border-top: 1px solid var(--rec-border); }
+.wtRecPracticeDetails summary { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding: 15px 0 0; color: #c6b7ff; cursor: pointer; font-size: 12px; font-weight: 600; list-style: none; }
+.wtRecPracticeDetails summary::-webkit-details-marker { display: none; }
+.wtRecPracticeDetails[open] summary > span { transform: rotate(45deg); }
+.wtRecPractice { margin-top: 14px; color: #b4bfd3; font-size: 12px; line-height: 1.8; }
+.wtRecPractice h5 { margin-bottom: 9px; }
+.wtRecPractice ol { margin: 12px 0; padding-left: 21px; }
+.wtRecPractice li { padding-left: 4px; margin: 6px 0; }
+.wtRecPractice strong { color: #d2daeb; font-weight: 550; }
+.wtRecHistoryTitle { margin-bottom: 18px !important; }
+.wtRecHistoryMetadata { display: grid; gap: 12px; }
+.wtRecEmptyState { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 17px; min-height: 245px; padding: 35px; text-align: center; }
+.wtRecEmptyState h4 { font-size: 17px; }
+.wtRecEmptyState p { max-width: 450px; color: var(--rec-muted); font-size: 12px; }
+.wtRecNotice { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 18px 20px; background: #211d35; border: 1px solid #463b65; border-radius: 12px; }
+.wtRecNotice strong { font-size: 13px; font-weight: 600; }
+.wtRecNotice p { margin-top: 5px; color: #b7afcb; font-size: 12px; }
+.wtRecSelectorGrid, .wtRecComparisonSummary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.wtRecSelectLabel { display: flex; flex-direction: column; gap: 9px; font-size: 12px; font-weight: 600; }
+.wtRecSelectLabel select { width: 100%; min-width: 0; padding: 11px 10px; border: 1px solid #3a4662; border-radius: 8px; background: #10182a; color: #dbe2f4; font-size: 12px; }
+.wtRecSelectLabel > span { color: var(--rec-muted); font-size: 11px; font-weight: 400; }
+.wtRecComparisonSummary h4 { margin: 7px 0; }
+.wtRecComparisonSummary h4 .wtRecMuted { font-size: 11px; }
+.wtRecSrOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.wtRecDateInput { width: 100%; min-width: 0; min-height: 44px; padding: 10px; border: 1px solid #3a4662; border-radius: 8px; background: #10182a; color: #dbe2f4; }
+.wtRecTechniqueStatus { display: inline-flex; align-items: center; padding: 4px 9px; border: 1px solid #3a4662; border-radius: 6px; background: #222b40; color: #c0cadd; font-size: 12px; }
+.wtRecTechniqueStatus[data-status='correct'] { color: #77dfb6; border-color: #245342; background: #19382f; }
+.wtRecTechniqueStatus[data-status='incorrect'] { color: #ffb58c; border-color: #79513e; background: #3b2b28; }
+.wtRecContributionTrack { height: 10px; margin-top: 8px; overflow: hidden; border-radius: 6px; background: #283148; }
+.wtRecContributionTrack > span { display: block; height: 100%; border-radius: inherit; background: #a99bff; }
+.wtRecRecommendationList { margin: 0; padding-left: 21px; color: #d4dcec; line-height: 1.8; overflow-wrap: anywhere; }
+.wtRecRecommendationList li + li { margin-top: 12px; }
+.wtRecBallNavigation { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
+.wtRecBallNavigation > .wtRecSelectLabel { flex: 1 1 180px; }
+.wtRecBallNavigation .wtRecToolbar { margin: 0; }
+.wtRecBallStatuses { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.wtRecBallStatuses dt { margin-bottom: 9px; color: var(--rec-muted); font-size: 12px; }
+.wtRecBallStatuses dd { margin: 0; }
+.wtRecInstruction { margin-top: 22px; padding: 17px; border: 1px solid #463b65; border-radius: 10px; background: #211d35; overflow-wrap: anywhere; }
+.wtRecInstruction p { color: #edf1fa; font-size: 14px; line-height: 1.7; }
+.wtRecPerformanceView { display: flex; flex-direction: column; gap: 20px; min-width: 0; overflow-wrap: anywhere; }
+.wtRecPerformanceView button:disabled { cursor: default; opacity: 0.55; }
+
+.wtRecModeGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.wtRecModeCard { position: relative; display: flex; flex-direction: column; gap: 12px; min-width: 0; min-height: 190px; padding: 24px; border: 1px solid var(--rec-border); border-radius: 14px; background: var(--rec-card); cursor: pointer; }
+.wtRecModeCard:hover { border-color: #8170bd; }
+.wtRecModeCard:focus-within { outline: 2px solid #b9adff; outline-offset: 4px; }
+.wtRecModeIcon { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 12px; }
+.wtRecModeIcon > svg { width: 28px; height: 28px; }
+.wtRecModeSelected { position: absolute; top: 24px; right: 24px; color: #c7baff; font-size: 11px; font-weight: 600; }
+.wtRecModeTitle { color: var(--rec-text); font-size: 17px; font-weight: 650; }
+.wtRecModeDescription { color: var(--rec-muted); font-size: 12px; line-height: 1.7; }
+.wtRecModeInfo { display: flex; align-items: flex-start; gap: 11px; margin-top: 18px; padding: 16px; border: 1px solid #303954; border-radius: 10px; background: #192237; }
+.wtRecModeInfo > span { display: inline-flex; flex-shrink: 0; padding-top: 2px; }
+.wtRecModeInfo strong { color: #dbe5f7; font-size: 12px; font-weight: 600; }
+.wtRecModeInfo p { color: #b1bed4; font-size: 12px; line-height: 1.8; }
+.wtRecModeInfo strong + p { margin-top: 5px; }
+.wtRecSessionInfoTitle { margin-top: 22px !important; margin-bottom: 13px !important; font-size: 13px !important; }
+.wtRecSessionInformation { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; padding: 17px; border: 1px solid var(--rec-border); border-radius: 9px; background: #11182a; }
+.wtRecSessionInformation dt { color: var(--rec-muted); font-size: 11px; }
+.wtRecSessionInformation dd { margin: 7px 0 0; color: #e1e8f5; font-size: 13px; }
+.wtRecArchiveSummary { color: #b9adff; font-size: 12px; font-weight: 600; cursor: pointer; }
+.wtRecArchiveSummary + div { margin-top: 20px; }
+
+/* Follow the existing app theme; keep the original dark palette above intact. */
+[data-theme='light'] .wtRecDashboard {
+  --rec-bg: var(--bg-primary);
+  --rec-card: var(--bg-card);
+  --rec-border: var(--border);
+  --rec-text: var(--text-primary);
+  --rec-muted: var(--text-secondary);
+  --rec-purple: var(--accent-primary);
+  color-scheme: light;
+
+  & button:focus-visible, & select:focus-visible, & input:focus-visible,
+  & summary:focus-visible, & .wtRecTableWrap:focus-visible,
+  & .wtRecSelectableCard:focus-within, & .wtRecModeCard:focus-within { outline-color: var(--accent-primary); }
+  & .wtRecNavigation { scrollbar-color: var(--accent-secondary) transparent; }
+  & .wtRecTableWrap { scrollbar-color: var(--accent-secondary) var(--bg-secondary); }
+  & .wtRecNavButton:hover, & .wtRecReportTab:hover,
+  & .wtRecTable tbody tr:hover { background: var(--bg-secondary); color: var(--rec-text); }
+  & .wtRecNavActive { color: #fff; background: var(--accent-primary); border-color: var(--accent-primary); }
+  & .wtRecDemoNotice strong, & .wtRecTextButton, & .wtRecEyebrow,
+  & .wtRecPracticeDetails summary, & .wtRecSelectedLabel,
+  & .wtRecModeSelected, & .wtRecArchiveSummary { color: var(--accent-primary); }
+  & .wtRecDemoDot { background: var(--accent-primary); }
+  & .wtRecPurple { color: #6044bf; background: #eee8ff; }
+  & .wtRecCyan { color: #087c92; background: #e0f4f8; }
+  & .wtRecOrange { color: #a34c0f; background: #fff0df; }
+  & .wtRecLilac { color: #7541b0; background: #f1e7fc; }
+  & .wtRecCyanText { color: #087c92 !important; }
+  & .wtRecOrangeText { color: #a34c0f !important; }
+  & .wtRecLilacText { color: #7541b0 !important; }
+  & .wtRecBanner, & .wtRecNotice, & .wtRecInstruction, & .wtRecGenerateFooter {
+    background: #eee8ff; border-color: #c9bce9;
+  }
+  & .wtRecBanner p, & .wtRecNotice p, & .wtRecCardHeading > svg,
+  & .wtRecTable thead th, & .wtRecTable tbody td,
+  & .wtRecSteps li, & .wtRecPractice, & .wtRecModeInfo p { color: var(--rec-muted); }
+  & .wtRecPrimaryButton { color: #fff; background: var(--accent-primary); border-color: var(--accent-primary); }
+  & .wtRecPrimaryButton:hover { background: #4b42cc; border-color: #4b42cc; }
+  & .wtRecSecondaryButton, & .wtRecFullButton {
+    color: var(--rec-text); background: var(--bg-card); border-color: var(--rec-border);
+  }
+  & .wtRecSecondaryButton:hover, & .wtRecFullButton:hover {
+    background: var(--bg-secondary); border-color: var(--accent-secondary);
+  }
+  & .wtRecTextButton:hover { color: #4b42cc; }
+  & .wtRecTag, & .wtRecTechniqueStatus {
+    color: var(--rec-muted); background: var(--bg-secondary); border-color: var(--rec-border);
+  }
+  & .wtRecFocusBadge, & .wtRecReportTabActive {
+    color: #6044bf; background: #eee8ff; border-color: #c9bce9;
+  }
+  & .wtRecCompleted, & .wtRecTechniqueStatus[data-status='correct'] {
+    color: #166344; background: #e2f5eb; border-color: #a6d7be;
+  }
+  & .wtRecTechniqueStatus[data-status='incorrect'] {
+    color: #a34c0f; background: #fff0df; border-color: #e8c29f;
+  }
+  & .wtRecChartGrid { stroke: var(--rec-border); }
+  & .wtRecChartArea { fill: #087c92; }
+  & .wtRecChartLine { stroke: #087c92; }
+  & .wtRecChartPoint { fill: #087c92; }
+  & .wtRecChartSelected { fill: var(--accent-primary); stroke: #d6c9f4; }
+  & .wtRecChartLegend::before { background: #087c92; }
+  & .wtRecTable thead th, & .wtRecSteps, & .wtRecSessionInformation { background: var(--bg-secondary); }
+  & .wtRecTable tbody th, & .wtRecReportMetadata dd, & .wtRecHistoryMetadata dd,
+  & .wtRecBodyText, & .wtRecPractice strong, & .wtRecRecommendationList,
+  & .wtRecInstruction p, & .wtRecModeInfo strong, & .wtRecSessionInformation dd { color: var(--rec-text); }
+  & .wtRecNumeric { color: var(--rec-text) !important; }
+  & .wtRecDifference { color: var(--accent-primary) !important; }
+  & .wtRecSteps li > span { color: var(--rec-muted); background: #dce0ef; }
+  & .wtRecSteps li.wtRecStepActive { color: var(--accent-primary); }
+  & .wtRecSteps li.wtRecStepActive > span { color: #fff; background: var(--accent-primary); }
+  & .wtRecSelectableCard:hover, & .wtRecModeCard:hover { border-color: var(--accent-primary); }
+  & .wtRecSelectableCard input { accent-color: var(--accent-primary); }
+  & .wtRecSelectedCard { background: #eee8ff; border-color: var(--accent-primary); box-shadow: inset 0 0 0 1px var(--accent-primary); }
+  & .wtRecError { color: #a52840; background: #ffedf0; border-color: #e8b5bf; }
+  & .wtRecTrend, & .wtRecModeInfo { color: var(--rec-muted); background: var(--bg-secondary); border-color: var(--rec-border); }
+  & .wtRecSelectLabel select, & .wtRecDateInput { color: var(--rec-text); background: var(--input-bg); border-color: var(--rec-border); }
+  & .wtRecContributionTrack { background: #dce0ef; }
+  & .wtRecContributionTrack > span { background: var(--accent-primary); }
+}
+
+@container recommendations (max-width: 850px) {
+  .wtRecKpiGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wtRecOverviewGrid { grid-template-columns: minmax(0, 1fr); }
+  .wtRecBanner { flex-wrap: wrap; }
+  .wtRecBanner .wtRecPrimaryButton { margin-left: 58px; max-width: none; }
+  .wtRecSessionList, .wtRecHistoryGrid { grid-template-columns: minmax(0, 1fr); }
+  .wtRecReportMetadata { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container recommendations (max-width: 610px) {
+  .wtRecModeGrid, .wtRecSessionInformation { grid-template-columns: minmax(0, 1fr); }
+  .wtRecModeCard { min-height: 175px; padding: 20px; }
+  .wtRecModeSelected { top: 20px; right: 20px; }
+  .wtRecSelectionGrid { grid-template-columns: minmax(0, 1fr); }
+  .wtRecSelectorGrid { grid-template-columns: minmax(0, 1fr); }
+  .wtRecSteps { gap: 16px; padding: 15px 10px; }
+  .wtRecSteps li { gap: 6px; font-size: 11px; }
+  .wtRecSteps li > span { width: 22px; height: 22px; }
+  .wtRecSelectionFieldset legend span { display: block; margin-top: 4px; }
+  .wtRecGenerateFooter .wtRecPrimaryButton { width: 100%; }
+}
+@container recommendations (max-width: 400px) {
+  .wtRecKpiGrid { gap: 10px; }
+  .wtRecKpiCard { padding: 15px 12px; }
+  .wtRecMetricValue { font-size: 25px; }
+  .wtRecMetricLabel { min-height: 32px; font-size: 10px; }
+  .wtRecMetricValue span { font-size: 9px; }
+  .wtRecCard, .wtRecSelectableCard { padding: 17px; }
+  .wtRecSessionMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+  .wtRecBanner { padding: 19px; gap: 13px; }
+  .wtRecBanner > div { flex-basis: calc(100% - 58px); }
+  .wtRecBanner .wtRecPrimaryButton { width: 100%; margin-left: 0; }
+  .wtRecSteps { gap: 12px; }
+  .wtRecSteps li { flex-direction: column; gap: 6px; font-size: 10px; }
+  .wtRecSteps li > span { width: 24px; height: 24px; }
+  .wtRecCardFooter > button { flex: 1; }
+  .wtRecComparisonSummary { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .wtRecEmptyState { padding: 24px 17px; }
+}
+@media (max-width: 760px) {
+  .wtRecDashboard { padding: 14px; border-radius: 12px; }
+  .wtRecScreen { gap: 17px; margin-top: 23px; }
+  .wtRecNavButton, .wtRecNavActive { min-height: 42px; }
+}

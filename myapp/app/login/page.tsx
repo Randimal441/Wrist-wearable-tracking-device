@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -8,9 +8,21 @@ import ThemeToggle from '../../components/ThemeToggle';
 export default function LoginPage() {
   const router = useRouter();
   const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() =>
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('error') === 'invalid'
+      ? 'Invalid email or password.'
+      : ''
+  );
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Keep native-form fallback errors visible when the LAN client bundle
+  // cannot attach React's submit handler.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('error') === 'invalid') {
+      window.history.replaceState({}, '', '/login');
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError('');
@@ -106,7 +118,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} noValidate>
+          <form action="/api/auth/login" method="post" onSubmit={handleSubmit} noValidate>
             {error && (
               <div className="alert-error" style={{ marginBottom: '1.25rem' }} role="alert">
                 <span style={{ marginRight: '0.5rem' }}>⚠</span>{error}
