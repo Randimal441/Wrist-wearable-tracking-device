@@ -1087,6 +1087,7 @@ body {
 .speed-live-panel .wrist-section-heading:only-child { margin-bottom: 0; }
 .speed-live-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1.25rem; }
 .speed-live-metrics .baseline-metric { min-height: 100px; }
+.speed-live-sensor { display: flex; align-items: center; gap: .6rem; margin: 0 0 1.25rem; color: var(--text-muted); font-size: .75rem; }
 @media (max-width: 760px) {
   .speed-live-heading { align-items: flex-start; }
   /* "km/h" is wider than the wrist page's "°", so shrink the hero numbers on phones */

@@ -436,41 +436,70 @@ export function LiveSessionPanel() {
 }
 
 function LiveSession({ onFinished }: { onFinished: (sessionNo: number | null) => void }) {
+    const [sessionNo, setSessionNo] = useState<number | null>(null);
+    const [startedAt, setStartedAt] = useState<string | null>(null);
     const [speeds, setSpeeds] = useState<number[]>([]);
+    const [readingCount, setReadingCount] = useState(0);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
-    const [startedAt] = useState(() => new Date());
     const [baseSpeed] = useState(() => BASE_SPEED_MIN + Math.random() * BASE_SPEED_RANGE);
 
-    // Mock glove data: replace with real device readings once the glove can send them.
+    // Opening the session is what lets the glove's readings be stored against it.
     useEffect(() => {
+        let cancelled = false;
+        fetch('/api/user/sessions', { method: 'POST' })
+            .then((res) => res.json())
+            .then((json) => {
+                if (!json.success) throw new Error(json.message);
+                if (cancelled) return;
+                setSessionNo(json.data.sessionNo);
+                setStartedAt(json.data.startedAt);
+            })
+            .catch(() => { if (!cancelled) setError('Could not start the session. Try again.'); });
+        return () => { cancelled = true; };
+    }, []);
+
+    // Mock delivery speeds: replace with real speeds once they are calculated from the glove readings.
+    useEffect(() => {
+        if (sessionNo === null) return;
         const timer = setInterval(() => {
             const next = baseSpeed + (Math.random() - 0.5) * 12;
             setSpeeds((prev) => [...prev, Math.round(next * 10) / 10]);
         }, LIVE_INTERVAL_MS);
         return () => clearInterval(timer);
-    }, [baseSpeed]);
+    }, [sessionNo, baseSpeed]);
+
+    // How many raw readings the glove has sent for this session so far.
+    useEffect(() => {
+        if (sessionNo === null) return;
+        let cancelled = false;
+        const poll = () => {
+            fetch(`/api/user/sessions/${sessionNo}/readings?limit=1`)
+                .then((res) => res.json())
+                .then((json) => { if (!cancelled && json.success) setReadingCount(json.data.count); })
+                .catch(() => {});
+        };
+        poll();
+        const timer = setInterval(poll, 3000);
+        return () => { cancelled = true; clearInterval(timer); };
+    }, [sessionNo]);
 
     const endSession = async () => {
-        if (speeds.length === 0) {
+        if (sessionNo === null) {
             onFinished(null);
             return;
         }
         setSaving(true);
         setError('');
         try {
-            const res = await fetch('/api/user/sessions', {
+            const res = await fetch(`/api/user/sessions/${sessionNo}/end`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    startedAt: startedAt.toISOString(),
-                    endedAt: new Date().toISOString(),
-                    speeds,
-                }),
+                body: JSON.stringify({ speeds }),
             });
             const json = await res.json();
             if (!json.success) throw new Error(json.message);
-            onFinished(json.data.sessionNo);
+            onFinished(json.data.discarded ? null : sessionNo);
         } catch {
             setError('Could not save the session. Try ending it again.');
             setSaving(false);
@@ -487,8 +516,12 @@ function LiveSession({ onFinished }: { onFinished: (sessionNo: number | null) =>
             <div className="wrist-section-heading speed-live-heading">
                 <div>
                     <span className="badge badge-green"><div className="pulse-dot" />Live</span>
-                    <h4 id="live-title">Session in progress</h4>
-                    <p>Started {formatDateTime(startedAt.toISOString())} · a new delivery appears every few seconds.</p>
+                    <h4 id="live-title">{sessionNo !== null ? `Session #${sessionNo} in progress` : 'Starting session…'}</h4>
+                    <p>
+                        {startedAt
+                            ? `Started ${formatDateTime(startedAt)} · a new delivery appears every few seconds.`
+                            : 'Opening your session so the glove can send readings.'}
+                    </p>
                 </div>
                 <button type="button" id="end-live-session" className="btn-primary" onClick={endSession} disabled={saving}>
                     {saving ? 'Saving…' : 'End Session'}
@@ -503,6 +536,12 @@ function LiveSession({ onFinished }: { onFinished: (sessionNo: number | null) =>
                 <BaselineMetric label="Top speed" value={kmh(max)} detail="Fastest delivery" accent="green" />
                 <BaselineMetric label="Deliveries" value={String(speeds.length)} detail="Recorded so far" accent="orange" />
             </div>
+            <p className="speed-live-sensor">
+                <span className={`badge ${readingCount > 0 ? 'badge-green' : 'badge-purple'}`}>
+                    Glove readings: {readingCount.toLocaleString()}
+                </span>
+                {readingCount === 0 && ' Waiting for your glove to send data…'}
+            </p>
 
             <SpeedChart speeds={speeds} />
         </section>
