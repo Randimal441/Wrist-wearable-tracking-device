@@ -1,18 +1,15 @@
+
 import dotenv from 'dotenv';
-import { join } from 'path';
+import { join } from 'node:path';
 import { Pool } from 'pg';
 
-// Next.js loads .env.local automatically; for standalone scripts (migrate, seed)
-// we load it manually here. dotenv.config() is a no-op if vars are already set.
-dotenv.config({ path: join(process.cwd(), '.env.local') });
+dotenv.config({
+  path: join(process.cwd(), '.env.local'),
+});
 
-declare global {
-  // eslint-disable-next-line no-var
-  var _pgPool: Pool | undefined;
-}
-
-function getPool(): Pool {
-  if (globalThis._pgPool) return globalThis._pgPool;
+const globalForPg = globalThis as unknown as {
+  pgPool?: Pool;
+};
 
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
@@ -50,12 +47,13 @@ function getPool(): Pool {
       ? { ssl: ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false } }
       : {}),
   });
+}
 
-  if (process.env.NODE_ENV !== 'production') {
-    globalThis._pgPool = pool;
-  }
+const pool =
+  globalForPg.pgPool ?? createPool();
 
-  return pool;
+if (process.env.NODE_ENV !== 'production') {
+  globalForPg.pgPool = pool;
 }
 
 // Lazy proxy — the Pool is created on first property access,
@@ -72,3 +70,4 @@ const pool = new Proxy({} as Pool, {
 });
 
 export default pool;
+export { pool };
