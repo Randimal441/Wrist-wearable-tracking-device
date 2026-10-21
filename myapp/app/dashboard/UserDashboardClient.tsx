@@ -1,5 +1,5 @@
 'use client';
-
+import DeviceRegister from './DeviceRegister';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import ThemeToggle from '../../components/ThemeToggle';
@@ -84,6 +84,12 @@ export default function UserDashboardClient({ user }: UserProps) {
             onClick={() => selectTab('delivery')}
             label="Delivery Performance"
             icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="m7 16 4-5 3 3 5-7" /></svg>}
+          />
+          <SidebarLink
+            active={activeTab === 'Device Register'}
+            onClick={() => selectTab('Device Register')}
+            label="Device Register"
+            icon={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M12 4h9" /><path d="M4 6h.01M4 12h.01M4 18h.01M12 6v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2Z" /></svg>}
           />
           <SidebarLink
             active={activeTab === 'speed'}
@@ -184,6 +190,7 @@ export default function UserDashboardClient({ user }: UserProps) {
             </button>
             <h2 style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--text-primary)' }}>
               {activeTab === 'delivery' && 'Delivery Performance'}
+              {activeTab === 'Device Register' && 'Device Register'}
               {activeTab === 'speed' && 'Speed Status'}
               {activeTab === 'grip' && 'Grip Status'}
               {activeTab === 'wrist' && 'Wrist Angle Status'}
@@ -205,7 +212,9 @@ export default function UserDashboardClient({ user }: UserProps) {
         {/* Page Content */}
         <div style={{ flex: 1, padding: '2rem', maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
           {activeTab === 'delivery' && <DeliveryPerformance />}
-          {activeTab === 'speed' && <SpeedStatus />}
+          {activeTab === 'Device Register' && <DeviceRegister />}
+          {activeTab === 'speed' && <ComingSoonTab label="Speed Status" />}
+          {activeTab === 'speed' && <SpeedStatus onGoToLive={() => selectTab('delivery')} />}
           {activeTab === 'grip' && <ComingSoonTab label="Grip Status" />}
           {activeTab === 'wrist' && <WristAngleStatusPage />}
           {activeTab === 'recommendations' && <PersonalizedRecommendation />}
@@ -258,6 +267,8 @@ function DeliveryPerformance() {
         </div>
         <div className="badge badge-green"><div className="pulse-dot" />Data received</div>
       </div>
+
+      <LiveSessionPanel />
 
       <div className="delivery-columns">
         <DeliveryCard title="Current Delivery" metrics={latestDelivery} />
