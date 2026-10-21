@@ -298,7 +298,6 @@ export default function AdminDashboardClient({ admin }: AdminProps) {
               <div className="pulse-dot" style={{ width: '6px', height: '6px' }} />
               System Normal
             </div>
-            <ThemeToggle />
           </div>
         </header>
 

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import ThemeToggle from '../../components/ThemeToggle';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -59,10 +58,6 @@ export default function LoginPage() {
 
   return (
     <main className="bg-mesh min-h-screen flex items-center justify-center p-4">
-      {/* Theme toggle — floating top-right */}
-      <div style={{ position: 'fixed', top: '1.25rem', right: '1.25rem', zIndex: 50 }}>
-        <ThemeToggle />
-      </div>
       {/* Background glow orbs */}
       <div
         aria-hidden="true"

@@ -198,7 +198,6 @@ export default function UserDashboardClient({ user }: UserProps) {
               <div className="pulse-dot" />
               Device Online
             </div>
-            <ThemeToggle />
           </div>
         </header>
 
