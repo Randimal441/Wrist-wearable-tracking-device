@@ -64,14 +64,11 @@ export default function UserDashboardClient({ user }: UserProps) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="5" y="2" width="14" height="20" rx="7" />
-                <path d="M12 6v6l3 3" />
-              </svg>
+              <img src="/smart-glove-logo.png" alt="Smart Glove logo" width="36" height="36" style={{ borderRadius: '10px', objectFit: 'cover' }} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-                Wrist<span style={{ color: 'var(--accent-secondary)' }}>Track</span>
+                Smart <span style={{ color: 'var(--accent-secondary)' }}>Glove</span>
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '-1px' }}>User Portal</div>
             </div>
