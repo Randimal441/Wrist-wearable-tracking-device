@@ -31,14 +31,13 @@ export async function getDeviceFromRequest(
     return null;
   }
 
-  const tokenHash = hashDeviceToken(token);
-
+  // Registration (app/api/user/devices) stores the raw token in device_token.
   const result = await pool.query(
     `SELECT id, user_id, device_name, is_active
        FROM public.devices
-      WHERE device_secret_hash = $1
+      WHERE device_token = $1
         AND is_active = TRUE`,
-    [tokenHash]
+    [token]
   );
 
   if (result.rows.length === 0) {
