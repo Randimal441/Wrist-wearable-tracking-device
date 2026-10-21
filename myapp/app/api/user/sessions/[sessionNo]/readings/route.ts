@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getUserFromRequest } from '@/lib/api-auth';
 
-export async function GET(req: NextRequest, context: { params: Promise<{ sessionId: string }> }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ sessionNo: string }> }) {
   const user = getUserFromRequest(req);
   if (!user) return NextResponse.json({ success: false, message: 'Unauthorized.' }, { status: 401 });
-  const { sessionId } = await context.params;
-  if (!/^\d+$/.test(sessionId)) return NextResponse.json({ success: false, message: 'Invalid session ID.' }, { status: 400 });
+  const { sessionNo } = await context.params;
+  if (!/^\d+$/.test(sessionNo)) return NextResponse.json({ success: false, message: 'Invalid session ID.' }, { status: 400 });
   const rawLimit = Number(req.nextUrl.searchParams.get('limit') ?? 200);
   const limit = Number.isInteger(rawLimit) ? Math.max(1, Math.min(rawLimit, 1000)) : 200;
   const before = req.nextUrl.searchParams.get('before');
@@ -14,10 +14,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ session
   try {
     const session = await pool.query(
       `SELECT id, session_name, source, started_at, ended_at, device_id
-         FROM public.bowling_sessions WHERE id = $1 AND user_id = $2`, [sessionId, user.userId]
+         FROM public.bowling_sessions WHERE id = $1 AND user_id = $2`, [sessionNo, user.userId]
     );
     if (!session.rows.length) return NextResponse.json({ success: false, message: 'Session not found.' }, { status: 404 });
-    const params: (string | number)[] = [sessionId, limit];
+    const params: (string | number)[] = [sessionNo, limit];
     let cursorFilter = '';
     if (before !== null) { params.push(Number(before)); cursorFilter = `AND sample_index < $3`; }
     const result = await pool.query(

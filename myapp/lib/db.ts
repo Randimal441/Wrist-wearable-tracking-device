@@ -11,6 +11,7 @@ const globalForPg = globalThis as unknown as {
   pgPool?: Pool;
 };
 
+function createPool(): Pool {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) {
     throw new Error(
@@ -41,7 +42,7 @@ const globalForPg = globalThis as unknown as {
     ? process.env.DATABASE_SSL.toLowerCase() === 'true'
     : !isLocalDatabase;
 
-  const pool = new Pool({
+  return new Pool({
     connectionString: url.toString(),
     ...(useSsl
       ? { ssl: ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false } }
@@ -49,11 +50,11 @@ const globalForPg = globalThis as unknown as {
   });
 }
 
-const pool =
-  globalForPg.pgPool ?? createPool();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPg.pgPool = pool;
+function getPool(): Pool {
+  if (!globalForPg.pgPool) {
+    globalForPg.pgPool = createPool();
+  }
+  return globalForPg.pgPool;
 }
 
 // Lazy proxy — the Pool is created on first property access,

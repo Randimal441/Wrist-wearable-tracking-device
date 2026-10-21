@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import ThemeToggle from '../../components/ThemeToggle';
 import PersonalizedRecommendation from './PersonalizedRecommendation';
 import ProfileSettings from './ProfileSettings';
-import SpeedStatus from './SpeedStatus';
+import SpeedStatus, { LiveSessionPanel } from './SpeedStatus';
 import WristAngleStatusPage from './WristAngleStatusPage';
 
 interface UserProps {
