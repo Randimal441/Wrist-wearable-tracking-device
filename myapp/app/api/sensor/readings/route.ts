@@ -182,19 +182,6 @@ export async function POST(request: Request) {
     );
   }
 
-  if (
-    body.sessionId !== undefined &&
-    (
-      !Number.isSafeInteger(body.sessionId) ||
-      (body.sessionId as number) <= 0
-    )
-  ) {
-    return NextResponse.json(
-      { success: false, message: 'Invalid session ID.' },
-      { status: 400 }
-    );
-  }
-
   const samples = body.samples;
   const indexes = samples.map((s) => s.sampleIndex);
 
@@ -233,66 +220,35 @@ export async function POST(request: Request) {
       );
     }
 
-    let sessionId: string;
+    // Readings belong to the session the user started in the app. If none is
+    // open there is nothing to attach them to, so refuse instead of guessing.
+    const openSession = await client.query(
+      `SELECT session_no
+         FROM public.speed_sessions
+        WHERE user_id = $1
+          AND ended_at IS NULL
+        ORDER BY session_no DESC
+        LIMIT 1
+        FOR SHARE`,
+      [device.user_id]
+    );
 
-    if (body.sessionId !== undefined) {
-      const session = await client.query(
-        `SELECT id
-           FROM public.bowling_sessions
-          WHERE id = $1
-            AND device_id = $2
-            AND user_id = $3
-            AND ended_at IS NULL
-          FOR UPDATE`,
-        [body.sessionId, device.id, device.user_id]
+    if (openSession.rowCount !== 1) {
+      await client.query('ROLLBACK');
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'No active session. Start a live session in the app first.',
+        },
+        { status: 409 }
       );
-
-      if (session.rowCount !== 1) {
-        await client.query('ROLLBACK');
-
-        return NextResponse.json(
-          {
-            success: false,
-            message: 'Open session not found for this device.',
-          },
-          { status: 404 }
-        );
-      }
-
-      sessionId = session.rows[0].id;
-    } else {
-      const existing = await client.query(
-        `SELECT id
-           FROM public.bowling_sessions
-          WHERE device_id = $1
-            AND user_id = $2
-            AND ended_at IS NULL
-          ORDER BY started_at DESC
-          LIMIT 1`,
-        [device.id, device.user_id]
-      );
-
-      if (existing.rowCount) {
-        sessionId = existing.rows[0].id;
-      } else {
-        const created = await client.query(
-          `INSERT INTO public.bowling_sessions
-             (user_id, device_id, session_name, source)
-           VALUES ($1, $2, $3, 'device')
-           RETURNING id`,
-          [
-            device.user_id,
-            device.id,
-            'Automatic device session',
-          ]
-        );
-
-        sessionId = created.rows[0].id;
-      }
     }
 
+    const sessionNo: number = openSession.rows[0].session_no;
+
     const columns = [
-      'session_id',
+      'user_id',
+      'session_no',
       'sample_index',
       'device_timestamp_ms',
       'imu1_ax', 'imu1_ay', 'imu1_az',
@@ -303,13 +259,13 @@ export async function POST(request: Request) {
       'imu2_mx', 'imu2_my', 'imu2_mz',
       'pressure1_raw', 'pressure2_raw', 'pressure3_raw',
       'pressure1_pa', 'pressure2_pa', 'pressure3_pa',
-      'source',
     ];
 
     const values: unknown[] = [];
     const rowPlaceholders = samples.map((sample) => {
       const row = [
-        sessionId,
+        device.user_id,
+        sessionNo,
         sample.sampleIndex,
         sample.timestampMs,
         ...sample.imu1.accel,
@@ -327,14 +283,14 @@ export async function POST(request: Request) {
 
       return `(${row.map(
         (_, index) => `$${start + index}`
-      ).join(', ')}, 'device')`;
+      ).join(', ')})`;
     });
 
     const inserted = await client.query(
       `INSERT INTO public.sensor_readings
          (${columns.join(', ')})
        VALUES ${rowPlaceholders.join(', ')}
-       ON CONFLICT (session_id, sample_index)
+       ON CONFLICT (user_id, session_no, sample_index)
        DO NOTHING
        RETURNING sample_index`,
       values
@@ -355,7 +311,7 @@ export async function POST(request: Request) {
       {
         success: true,
         data: {
-          sessionId,
+          sessionNo,
           receivedSamples: samples.length,
           storedSamples,
           duplicateSamples: samples.length - storedSamples,

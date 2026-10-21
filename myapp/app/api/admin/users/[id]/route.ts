@@ -47,7 +47,7 @@ export async function GET(
               max_speed::float AS max_speed,
               min_speed::float AS min_speed
        FROM speed_sessions
-       WHERE user_id = $1
+       WHERE user_id = $1 AND ended_at IS NOT NULL AND deliveries_count > 0
        ORDER BY started_at DESC
        LIMIT 100`,
       [userId]
