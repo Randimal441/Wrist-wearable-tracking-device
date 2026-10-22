@@ -1,14 +1,16 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { ARM_LENGTH_MAX_M, ARM_LENGTH_MIN_M, DEFAULT_ACCEL_RANGE_G } from '@/lib/sensor-config';
 
 interface ProfileSettingsProps {
-  user: { name: string; email: string };
+  user: { name: string; email: string; armLengthM: number | null };
   onSaved: () => void;
 }
 
 export default function ProfileSettings({ user, onSaved }: ProfileSettingsProps) {
   const [name, setName] = useState(user.name);
+  const [armLength, setArmLength] = useState(user.armLengthM === null ? '' : String(user.armLengthM));
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -29,12 +31,18 @@ export default function ProfileSettings({ user, onSaved }: ProfileSettingsProps)
       return;
     }
 
+    const armLengthM = armLength.trim() === '' ? undefined : Number(armLength);
+    if (armLengthM !== undefined && (!Number.isFinite(armLengthM) || armLengthM < ARM_LENGTH_MIN_M || armLengthM > ARM_LENGTH_MAX_M)) {
+      setError(`Arm length must be between ${ARM_LENGTH_MIN_M} and ${ARM_LENGTH_MAX_M} metres.`);
+      return;
+    }
+
     setSaving(true);
     try {
       const response = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, currentPassword, newPassword }),
+        body: JSON.stringify({ name, currentPassword, newPassword, armLengthM }),
       });
       const data = await response.json();
 
@@ -60,7 +68,7 @@ export default function ProfileSettings({ user, onSaved }: ProfileSettingsProps)
       <div style={{ marginBottom: '1.5rem' }}>
         <span className="eyebrow">Account</span>
         <h3 style={{ color: 'var(--text-primary)', fontSize: '1.5rem', margin: '.35rem 0 .5rem' }}>Profile settings</h3>
-        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Update your personal details and account password.</p>
+        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Update your personal details, arm length and account password.</p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
@@ -78,6 +86,32 @@ export default function ProfileSettings({ user, onSaved }: ProfileSettingsProps)
           <label className="input-label" htmlFor="profile-email" style={{ display: 'block', marginTop: '1rem' }}>Email address</label>
           <input id="profile-email" className="input-field" value={user.email} disabled />
           <p style={{ color: 'var(--text-muted)', fontSize: '.75rem', margin: '.5rem 0 0' }}>Email changes are not available here.</p>
+        </section>
+
+        <section className="glass-card" style={{ padding: '1.5rem' }}>
+          <h4 style={{ color: 'var(--text-primary)', margin: '0 0 .4rem' }}>Bowling measurements</h4>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '.85rem', margin: '0 0 1rem' }}>
+            Your release speed is calculated from your arm length, so you need to set it before you can start a session.
+          </p>
+          <label className="input-label" htmlFor="profile-arm-length">Arm length (metres)</label>
+          <input
+            id="profile-arm-length"
+            className="input-field"
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min={ARM_LENGTH_MIN_M}
+            max={ARM_LENGTH_MAX_M}
+            placeholder="e.g. 0.75"
+            value={armLength}
+            onChange={(event) => setArmLength(event.target.value)}
+          />
+          <p style={{ color: 'var(--text-muted)', fontSize: '.75rem', margin: '.5rem 0 0' }}>
+            Measure from your shoulder joint to your wrist, where the glove sensor sits.
+            {user.armLengthM === null && ' Not set yet.'}
+          </p>
+          <label className="input-label" htmlFor="profile-sensor-range" style={{ display: 'block', marginTop: '1rem' }}>Accelerometer range</label>
+          <input id="profile-sensor-range" className="input-field" value={`±${DEFAULT_ACCEL_RANGE_G} g (default)`} disabled />
         </section>
 
         <section className="glass-card" style={{ padding: '1.5rem' }}>

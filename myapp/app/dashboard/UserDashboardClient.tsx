@@ -9,7 +9,7 @@ import SpeedStatus, { LiveSessionPanel } from './SpeedStatus';
 import WristAngleStatusPage from './WristAngleStatusPage';
 
 interface UserProps {
-  user: { name: string; email: string };
+  user: { name: string; email: string; armLengthM: number | null };
 }
 
 function SidebarLink({
