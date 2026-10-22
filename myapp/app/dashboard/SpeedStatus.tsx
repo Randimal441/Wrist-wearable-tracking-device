@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useReleaseSpeeds, type ReleaseSpeedsData } from './ReleaseSpeed';
 
 export interface SessionSummary {
     session_no: number;
@@ -16,14 +18,24 @@ export interface SessionDetail extends SessionSummary {
     deliveries: { delivery_no: number; speed_kmh: number }[];
 }
 
+interface LiveBall {
+    ballNo: number;
+    delivery: { speedKmh: number; aMagG: number; saturated: boolean } | null;
+}
+
+interface LiveData {
+    balls: LiveBall[];
+    waiting: boolean;
+    uncounted: number;
+}
+
 type BaselineStatus = 'On baseline' | 'Above baseline' | 'Below baseline';
 
-const LIVE_INTERVAL_MS = 2500;
-const BASE_SPEED_MIN = 112;
-const BASE_SPEED_RANGE = 14;
+const LIVE_POLL_MS = 2000;
 // A session within ±3 km/h of the player's average counts as "on baseline".
 const BASELINE_TOLERANCE = 3;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DELIVERIES_SHOWN = 100;
 
 export function formatDateTime(iso: string) {
     return new Date(iso).toLocaleString(undefined, {
@@ -84,12 +96,13 @@ function BaselineMetric({ label, value, detail, accent }: { label: string; value
    SPEED STATUS PAGE — latest session, personal baseline, session history
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-export default function SpeedStatus({ onGoToLive }: { onGoToLive?: () => void }) {
+export default function SpeedStatus({ onGoToLive, onGoToProfile }: { onGoToLive?: () => void; onGoToProfile?: () => void }) {
     const [sessions, setSessions] = useState<SessionSummary[]>([]);
     const [latest, setLatest] = useState<SessionDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [dateFilter, setDateFilter] = useState('all');
+    const deliveries = useReleaseSpeeds(DELIVERIES_SHOWN);
     const [weekAgo] = useState(() => Date.now() - WEEK_MS);
 
     const [selected, setSelected] = useState<SessionDetail | null>(null);
@@ -302,7 +315,112 @@ export default function SpeedStatus({ onGoToLive }: { onGoToLive?: () => void })
                     </section>
                 </>
             )}
+
+            <DeliveriesSection data={deliveries.data} failed={deliveries.failed} onGoToProfile={onGoToProfile} />
         </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ALL DELIVERIES — every delivery the glove sent, in a live session or not
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+function formatDeliveryTime(iso: string) {
+    return new Date(iso).toLocaleString(undefined, {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    });
+}
+
+function DeliveriesSection({
+    data,
+    failed,
+    onGoToProfile,
+}: {
+    data: ReleaseSpeedsData | null;
+    failed: boolean;
+    onGoToProfile?: () => void;
+}) {
+    const [filter, setFilter] = useState('all');
+
+    const all = data?.deliveries ?? [];
+    const shown = all.filter((d) => filter === 'all' || (filter === 'session' ? d.sessionNo !== null : d.sessionNo === null));
+
+    return (
+        <section className="wrist-section glass-card" aria-labelledby="all-deliveries-title">
+            <div className="wrist-section-heading history-heading">
+                <div>
+                    <span className="eyebrow">Every delivery from your glove</span>
+                    <h4 id="all-deliveries-title">All deliveries</h4>
+                    <p>
+                        Includes deliveries you bowled outside a live session. Release speed is calculated from your wrist
+                        accelerometer and your arm length.
+                    </p>
+                </div>
+                {data && !data.armLengthRequired && <span className="badge badge-purple">{all.length} shown</span>}
+            </div>
+
+            {failed && !data && <p className="empty-history" style={{ color: 'var(--accent-red)' }}>Could not load your deliveries.</p>}
+            {!failed && !data && <p className="empty-history">Loading deliveries…</p>}
+
+            {data?.armLengthRequired && (
+                <div className="speed-release-notice">
+                    <p>Please update your arm length in your profile to see your delivery speeds.</p>
+                    {onGoToProfile && <button type="button" className="btn-primary" onClick={onGoToProfile}>Go to profile</button>}
+                </div>
+            )}
+
+            {data && !data.armLengthRequired && all.length === 0 && (
+                <p className="empty-history">No deliveries yet. They appear here as soon as your glove sends one.</p>
+            )}
+
+            {data && !data.armLengthRequired && all.length > 0 && (
+                <>
+                    <div className="history-filters">
+                        <label>
+                            Show
+                            <select value={filter} onChange={(event) => setFilter(event.target.value)}>
+                                <option value="all">All deliveries</option>
+                                <option value="session">In a live session</option>
+                                <option value="none">Outside a session</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div className="history-table-wrap">
+                        <table className="wrist-history-table">
+                            <thead>
+                                <tr><th>Delivery</th><th>Released</th><th>Session</th><th>Acceleration</th><th>Speed</th></tr>
+                            </thead>
+                            <tbody>
+                                {shown.map((d) => (
+                                    <tr key={d.deliveryId}>
+                                        <td><strong>Delivery {d.deliveryId}</strong></td>
+                                        <td>{formatDeliveryTime(d.releasedAt)}</td>
+                                        <td>
+                                            {d.sessionNo !== null
+                                                ? `Session #${d.sessionNo} · ball ${d.ballNo}`
+                                                : <span className="history-status status-low" style={{ background: 'rgba(148,163,184,.12)', color: 'var(--text-muted)' }}>Not in a session</span>}
+                                        </td>
+                                        <td>{d.aMagG.toFixed(2)} g</td>
+                                        <td className="release-value">
+                                            {d.saturated ? '≥ ' : ''}{d.speedKmh.toFixed(1)} km/h
+                                            {d.saturated && <span className="history-status status-high" style={{ marginLeft: '.5rem' }}>Sensor limit</span>}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {shown.length === 0 && <p className="empty-history">No deliveries match this filter.</p>}
+                    </div>
+                    {all.length >= DELIVERIES_SHOWN && (
+                        <p className="empty-history">Showing your latest {DELIVERIES_SHOWN} deliveries.</p>
+                    )}
+                </>
+            )}
+        </section>
     );
 }
 
@@ -400,15 +518,40 @@ export function SessionDetailView({
    LIVE SESSION — shown on the Delivery Performance page
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-export function LiveSessionPanel() {
-    const [running, setRunning] = useState(false);
+export function LiveSessionPanel({ onGoToProfile }: { onGoToProfile?: () => void }) {
+    const [session, setSession] = useState<{ sessionNo: number; startedAt: string } | null>(null);
     const [savedSessionNo, setSavedSessionNo] = useState<number | null>(null);
+    const [starting, setStarting] = useState(false);
+    const [startError, setStartError] = useState('');
+    const [needsArmLength, setNeedsArmLength] = useState(false);
 
-    if (running) {
+    // Opening the session is what lets the glove's readings be stored against it.
+    const startSession = async () => {
+        setStarting(true);
+        setStartError('');
+        try {
+            const res = await fetch('/api/user/sessions', { method: 'POST' });
+            const json = await res.json();
+            if (json.code === 'ARM_LENGTH_REQUIRED') {
+                setNeedsArmLength(true);
+                return;
+            }
+            if (!json.success) throw new Error(json.message);
+            setSession(json.data);
+        } catch {
+            setStartError('Could not start the session. Try again.');
+        } finally {
+            setStarting(false);
+        }
+    };
+
+    if (session) {
         return (
             <LiveSession
+                sessionNo={session.sessionNo}
+                startedAt={session.startedAt}
                 onFinished={(sessionNo) => {
-                    setRunning(false);
+                    setSession(null);
                     setSavedSessionNo(sessionNo);
                 }}
             />
@@ -416,87 +559,108 @@ export function LiveSessionPanel() {
     }
 
     return (
-        <section className="wrist-section glass-card speed-live-panel" aria-labelledby="live-start-title">
-            <div className="wrist-section-heading speed-live-heading">
-                <div>
-                    <span className="eyebrow">Live session / bowling speed</span>
-                    <h4 id="live-start-title">Track a live bowling session</h4>
-                    <p>
-                        {savedSessionNo !== null
-                            ? `Session #${savedSessionNo} saved. Review it under Speed Status, or start another session.`
-                            : 'Start a session to record the speed of every delivery as you bowl.'}
-                    </p>
+        <>
+            <section className="wrist-section glass-card speed-live-panel" aria-labelledby="live-start-title">
+                <div className="wrist-section-heading speed-live-heading">
+                    <div>
+                        <span className="eyebrow">Live session / bowling speed</span>
+                        <h4 id="live-start-title">Track a live bowling session</h4>
+                        <p>
+                            {savedSessionNo !== null
+                                ? `Session #${savedSessionNo} saved. Review it under Speed Status, or start another session.`
+                                : 'Start a session, then bowl. Your glove sends each delivery, and you click Next ball before every ball after the first.'}
+                        </p>
+                        {startError && <p style={{ color: 'var(--accent-red)', marginTop: '.5rem' }}>{startError}</p>}
+                    </div>
+                    <button type="button" id="start-live-session" className="btn-primary" onClick={startSession} disabled={starting}>
+                        {starting ? 'Starting…' : 'Start Live Session'}
+                    </button>
                 </div>
-                <button type="button" id="start-live-session" className="btn-primary" onClick={() => setRunning(true)}>
-                    Start Live Session
-                </button>
-            </div>
-        </section>
+            </section>
+
+            {needsArmLength && createPortal(
+                <div className="speed-modal-backdrop" onClick={() => setNeedsArmLength(false)}>
+                    <div
+                        className="speed-modal glass-card"
+                        role="alertdialog"
+                        aria-modal="true"
+                        aria-labelledby="arm-length-title"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <h4 id="arm-length-title">Arm length needed</h4>
+                        <p>Please update your arm length in your profile. Your release speed can&apos;t be calculated without it.</p>
+                        <div className="speed-modal-actions">
+                            <button type="button" className="btn-ghost" onClick={() => setNeedsArmLength(false)}>Close</button>
+                            {onGoToProfile && (
+                                <button
+                                    type="button"
+                                    id="go-to-profile"
+                                    className="btn-primary"
+                                    onClick={() => { setNeedsArmLength(false); onGoToProfile(); }}
+                                >
+                                    Go to profile
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>,
+                // Rendered on <body> so no page section's stacking context can paint over it.
+                document.body
+            )}
+        </>
     );
 }
 
-function LiveSession({ onFinished }: { onFinished: (sessionNo: number | null) => void }) {
-    const [sessionNo, setSessionNo] = useState<number | null>(null);
-    const [startedAt, setStartedAt] = useState<string | null>(null);
-    const [speeds, setSpeeds] = useState<number[]>([]);
-    const [readingCount, setReadingCount] = useState(0);
+function LiveSession({
+    sessionNo,
+    startedAt,
+    onFinished,
+}: {
+    sessionNo: number;
+    startedAt: string;
+    onFinished: (sessionNo: number | null) => void;
+}) {
+    const [live, setLive] = useState<LiveData | null>(null);
+    const [arming, setArming] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
-    const [baseSpeed] = useState(() => BASE_SPEED_MIN + Math.random() * BASE_SPEED_RANGE);
 
-    // Opening the session is what lets the glove's readings be stored against it.
+    // Each delivery the glove sends appears here: the server links it to the armed ball.
     useEffect(() => {
-        let cancelled = false;
-        fetch('/api/user/sessions', { method: 'POST' })
-            .then((res) => res.json())
-            .then((json) => {
-                if (!json.success) throw new Error(json.message);
-                if (cancelled) return;
-                setSessionNo(json.data.sessionNo);
-                setStartedAt(json.data.startedAt);
-            })
-            .catch(() => { if (!cancelled) setError('Could not start the session. Try again.'); });
-        return () => { cancelled = true; };
-    }, []);
-
-    // Mock delivery speeds: replace with real speeds once they are calculated from the glove readings.
-    useEffect(() => {
-        if (sessionNo === null) return;
-        const timer = setInterval(() => {
-            const next = baseSpeed + (Math.random() - 0.5) * 12;
-            setSpeeds((prev) => [...prev, Math.round(next * 10) / 10]);
-        }, LIVE_INTERVAL_MS);
-        return () => clearInterval(timer);
-    }, [sessionNo, baseSpeed]);
-
-    // How many raw readings the glove has sent for this session so far.
-    useEffect(() => {
-        if (sessionNo === null) return;
         let cancelled = false;
         const poll = () => {
-            fetch(`/api/user/sessions/${sessionNo}/readings?limit=1`)
-                .then((res) => res.json())
-                .then((json) => { if (!cancelled && json.success) setReadingCount(json.data.count); })
+            fetchJson<LiveData>(`/api/user/sessions/${sessionNo}/live`)
+                .then((data) => { if (!cancelled) setLive(data); })
                 .catch(() => {});
         };
         poll();
-        const timer = setInterval(poll, 3000);
+        const timer = setInterval(poll, LIVE_POLL_MS);
         return () => { cancelled = true; clearInterval(timer); };
     }, [sessionNo]);
 
-    const endSession = async () => {
-        if (sessionNo === null) {
-            onFinished(null);
-            return;
+    const nextBall = async () => {
+        setArming(true);
+        setError('');
+        try {
+            const res = await fetch(`/api/user/sessions/${sessionNo}/next-ball`, { method: 'POST' });
+            const json = await res.json();
+            if (!json.success) {
+                setError(json.message || 'Could not get the next ball ready.');
+                return;
+            }
+            setLive(json.data);
+        } catch {
+            setError('Could not get the next ball ready. Try again.');
+        } finally {
+            setArming(false);
         }
+    };
+
+    const endSession = async () => {
         setSaving(true);
         setError('');
         try {
-            const res = await fetch(`/api/user/sessions/${sessionNo}/end`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ speeds }),
-            });
+            const res = await fetch(`/api/user/sessions/${sessionNo}/end`, { method: 'POST' });
             const json = await res.json();
             if (!json.success) throw new Error(json.message);
             onFinished(json.data.discarded ? null : sessionNo);
@@ -506,9 +670,11 @@ function LiveSession({ onFinished }: { onFinished: (sessionNo: number | null) =>
         }
     };
 
-    const current = speeds[speeds.length - 1];
-    const avg = speeds.length ? speeds.reduce((a, b) => a + b, 0) / speeds.length : undefined;
-    const max = speeds.length ? Math.max(...speeds) : undefined;
+    const bowled = (live?.balls ?? []).filter((b) => b.delivery !== null);
+    const speeds = bowled.map((b) => b.delivery!.speedKmh);
+    const latest = bowled[bowled.length - 1];
+    const waiting = live?.waiting ?? true;
+    const currentBall = live ? live.balls[live.balls.length - 1]?.ballNo ?? 1 : 1;
     const kmh = (value?: number) => (value === undefined ? '--' : `${value.toFixed(1)} km/h`);
 
     return (
@@ -516,34 +682,53 @@ function LiveSession({ onFinished }: { onFinished: (sessionNo: number | null) =>
             <div className="wrist-section-heading speed-live-heading">
                 <div>
                     <span className="badge badge-green"><div className="pulse-dot" />Live</span>
-                    <h4 id="live-title">{sessionNo !== null ? `Session #${sessionNo} in progress` : 'Starting session…'}</h4>
-                    <p>
-                        {startedAt
-                            ? `Started ${formatDateTime(startedAt)} · a new delivery appears every few seconds.`
-                            : 'Opening your session so the glove can send readings.'}
-                    </p>
+                    <h4 id="live-title">Session #{sessionNo} in progress</h4>
+                    <p>Started {formatDateTime(startedAt)}</p>
                 </div>
-                <button type="button" id="end-live-session" className="btn-primary" onClick={endSession} disabled={saving}>
-                    {saving ? 'Saving…' : 'End Session'}
-                </button>
+                <div className="speed-live-actions">
+                    <button
+                        type="button"
+                        id="next-ball"
+                        className="btn-primary"
+                        onClick={nextBall}
+                        disabled={waiting || arming || saving}
+                    >
+                        {arming ? 'Getting ready…' : 'Next ball'}
+                    </button>
+                    <button type="button" id="end-live-session" className="btn-ghost" onClick={endSession} disabled={saving}>
+                        {saving ? 'Saving…' : 'End Session'}
+                    </button>
+                </div>
+            </div>
+
+            <div className={`speed-ball-status ${waiting ? 'is-waiting' : 'is-done'}`} role="status" aria-live="polite">
+                {waiting ? (
+                    <>
+                        <strong>Ball {currentBall}: bowl now</strong>
+                        <span>Your glove is ready and waiting for the delivery…</span>
+                    </>
+                ) : (
+                    <>
+                        <strong>
+                            Ball {latest?.ballNo}: {latest?.delivery?.saturated ? '≥ ' : ''}{latest?.delivery?.speedKmh.toFixed(1)} km/h
+                        </strong>
+                        <span>Click Next ball before you bowl the next one.</span>
+                    </>
+                )}
             </div>
 
             {error && <p className="empty-history" style={{ color: 'var(--accent-red)' }}>{error}</p>}
+            {live && live.uncounted > 0 && (
+                <p className="speed-release-warning" role="status">
+                    {live.uncounted === 1 ? 'A delivery was' : `${live.uncounted} deliveries were`} received without a ready ball and
+                    not counted. Click Next ball before you bowl.
+                </p>
+            )}
 
-            <div className="speed-live-metrics">
-                <BaselineMetric label="Current speed" value={kmh(current)} detail="Latest delivery" accent="teal" />
-                <BaselineMetric label="Average" value={kmh(avg)} detail="This session" accent="purple" />
-                <BaselineMetric label="Top speed" value={kmh(max)} detail="Fastest delivery" accent="green" />
-                <BaselineMetric label="Deliveries" value={String(speeds.length)} detail="Recorded so far" accent="orange" />
+            <div className="speed-live-metrics speed-live-metrics-2">
+                <BaselineMetric label="Latest ball" value={kmh(latest?.delivery?.speedKmh)} detail={latest ? `Ball ${latest.ballNo}` : 'Waiting for ball 1'} accent="teal" />
+                <BaselineMetric label="Balls bowled" value={String(speeds.length)} detail="Counted this session" accent="orange" />
             </div>
-            <p className="speed-live-sensor">
-                <span className={`badge ${readingCount > 0 ? 'badge-green' : 'badge-purple'}`}>
-                    Glove readings: {readingCount.toLocaleString()}
-                </span>
-                {readingCount === 0 && ' Waiting for your glove to send data…'}
-            </p>
-
-            <SpeedChart speeds={speeds} />
         </section>
     );
 }
@@ -563,7 +748,7 @@ function SpeedChart({ speeds }: { speeds: number[] }) {
     const gradientId = useId();
 
     if (speeds.length === 0) {
-        return <p className="empty-history">Waiting for the first delivery…</p>;
+        return <p className="empty-history">Waiting for the first ball…</p>;
     }
 
     const min = Math.min(...speeds);

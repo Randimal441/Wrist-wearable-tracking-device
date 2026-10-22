@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { verifyToken } from '@/lib/jwt';
 import { signToken } from '@/lib/jwt';
 import pool from '@/lib/db';
+import { ARM_LENGTH_MAX_M, ARM_LENGTH_MIN_M } from '@/lib/sensor-config';
 
 function getPayload(req: NextRequest) {
   const token = req.cookies.get('auth_token')?.value;
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   }
 
   const result = await pool.query(
-    'SELECT id, name, email, role, created_at FROM users WHERE id = $1',
+    'SELECT id, name, email, role, created_at, arm_length_m::float AS arm_length_m FROM users WHERE id = $1',
     [payload.userId]
   );
 
@@ -47,6 +48,20 @@ export async function PATCH(req: NextRequest) {
     const name = typeof body.name === 'string' ? body.name.trim() : '';
     const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : '';
     const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
+
+    // Optional: only changed when sent.
+    let armLengthM: number | undefined;
+    if (body.armLengthM !== undefined) {
+      const value = Number(body.armLengthM);
+      if (typeof body.armLengthM === 'boolean' || body.armLengthM === null || !Number.isFinite(value) ||
+          value < ARM_LENGTH_MIN_M || value > ARM_LENGTH_MAX_M) {
+        return NextResponse.json(
+          { success: false, message: `Arm length must be between ${ARM_LENGTH_MIN_M} and ${ARM_LENGTH_MAX_M} metres.` },
+          { status: 400 }
+        );
+      }
+      armLengthM = Math.round(value * 100) / 100;
+    }
 
     if (!name) {
       return NextResponse.json(
@@ -97,6 +112,10 @@ export async function PATCH(req: NextRequest) {
       await pool.query('UPDATE users SET name = $1 WHERE id = $2', [name, payload.userId]);
     }
 
+    if (armLengthM !== undefined) {
+      await pool.query('UPDATE users SET arm_length_m = $1 WHERE id = $2', [armLengthM, payload.userId]);
+    }
+
     const token = signToken({
       userId: payload.userId,
       email: current.rows[0].email,
@@ -106,7 +125,7 @@ export async function PATCH(req: NextRequest) {
     const response = NextResponse.json({
       success: true,
       message: 'Profile updated successfully.',
-      data: { name, email: current.rows[0].email },
+      data: { name, email: current.rows[0].email, armLengthM: armLengthM ?? null },
     });
     response.cookies.set('auth_token', token, {
       httpOnly: true,

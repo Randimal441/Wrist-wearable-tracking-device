@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import pool from '@/lib/db';
+import { refreshSession } from '@/lib/session-balls';
 
-const MIN_SPEED = 20;
-const MAX_SPEED = 180;
-const MAX_DELIVERIES = 500;
-
-// POST /api/user/sessions/[sessionNo]/end — close the user's open session and
-// store its delivery speeds. Body: { speeds: number[] } (km/h, may be empty).
-// A session with no speeds and no sensor readings is discarded.
+// POST /api/user/sessions/[sessionNo]/end — close the user's open session. Its deliveries are
+// the balls that received a glove delivery, in order; an armed ball that was never bowled is
+// dropped. A session with no deliveries is discarded.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ sessionNo: string }> }
@@ -31,31 +28,23 @@ export async function POST(
     );
   }
 
-  let body: { speeds?: unknown };
   try {
-    body = await req.json();
-  } catch {
+    // Pick up a delivery that arrived just before End was pressed.
+    const user = await pool.query(
+      'SELECT arm_length_m::float AS arm_length_m FROM users WHERE id = $1',
+      [payload.userId]
+    );
+    const armLengthM: number | null = user.rows[0]?.arm_length_m ?? null;
+    if (armLengthM !== null) {
+      await refreshSession(payload.userId, sessionNum, armLengthM);
+    }
+  } catch (error) {
+    console.error('End session refresh error:', error);
     return NextResponse.json(
-      { success: false, message: 'Invalid JSON body.' },
-      { status: 400 }
+      { success: false, message: 'Internal server error.' },
+      { status: 500 }
     );
   }
-
-  const speeds = body.speeds;
-  const validSpeeds =
-    Array.isArray(speeds) &&
-    speeds.length <= MAX_DELIVERIES &&
-    speeds.every((s) => typeof s === 'number' && s >= MIN_SPEED && s <= MAX_SPEED);
-  if (!validSpeeds) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: `speeds must be up to ${MAX_DELIVERIES} numbers between ${MIN_SPEED} and ${MAX_SPEED} km/h.`,
-      },
-      { status: 400 }
-    );
-  }
-  const values = speeds as number[];
 
   const client = await pool.connect();
   try {
@@ -75,26 +64,22 @@ export async function POST(
       );
     }
 
+    const balls = await client.query(
+      `SELECT speed_kmh::float AS speed_kmh
+         FROM session_balls
+        WHERE user_id = $1 AND session_no = $2 AND delivery_id IS NOT NULL
+        ORDER BY ball_no`,
+      [payload.userId, sessionNum]
+    );
+    const values: number[] = balls.rows.map((r) => r.speed_kmh);
+
     if (values.length === 0) {
-      const readings = await client.query(
-        'SELECT 1 FROM sensor_readings WHERE user_id = $1 AND session_no = $2 LIMIT 1',
-        [payload.userId, sessionNum]
-      );
-      if (readings.rows.length === 0) {
-        await client.query(
-          'DELETE FROM speed_sessions WHERE user_id = $1 AND session_no = $2',
-          [payload.userId, sessionNum]
-        );
-        await client.query('COMMIT');
-        return NextResponse.json({ success: true, data: { sessionNo: sessionNum, discarded: true } });
-      }
-      // Readings exist but no speeds: keep the raw data, close without totals.
       await client.query(
-        'UPDATE speed_sessions SET ended_at = NOW() WHERE user_id = $1 AND session_no = $2',
+        'DELETE FROM speed_sessions WHERE user_id = $1 AND session_no = $2',
         [payload.userId, sessionNum]
       );
       await client.query('COMMIT');
-      return NextResponse.json({ success: true, data: { sessionNo: sessionNum, discarded: false } });
+      return NextResponse.json({ success: true, data: { sessionNo: sessionNum, discarded: true } });
     }
 
     const avg = values.reduce((a, b) => a + b, 0) / values.length;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getUserFromRequest } from '@/lib/api-auth';
+import { sensorReadingsHaveSessions } from '@/lib/sensor-schema';
 
 // GET /api/user/sessions/[sessionNo]/readings — raw glove readings stored for one of
 // the logged-in user's speed sessions (open or finished), plus the total reading count.
@@ -22,6 +23,10 @@ export async function GET(req: NextRequest, context: { params: Promise<{ session
          FROM public.speed_sessions WHERE user_id = $1 AND session_no = $2`, [user.userId, Number(sessionNo)]
     );
     if (!session.rows.length) return NextResponse.json({ success: false, message: 'Session not found.' }, { status: 404 });
+
+    if (!(await sensorReadingsHaveSessions())) {
+      return NextResponse.json({ success: true, data: { session: session.rows[0], count: 0, readings: [] } });
+    }
 
     const params: (string | number)[] = [user.userId, Number(sessionNo), limit];
     let cursorFilter = '';

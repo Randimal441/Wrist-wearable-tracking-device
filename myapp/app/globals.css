@@ -1087,6 +1087,22 @@ body {
 .speed-live-panel .wrist-section-heading:only-child { margin-bottom: 0; }
 .speed-live-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1.25rem; }
 .speed-live-metrics .baseline-metric { min-height: 100px; }
+.speed-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; background: rgba(5, 8, 20, .6); backdrop-filter: blur(4px); }
+.speed-modal { width: 100%; max-width: 420px; padding: 1.5rem; }
+.speed-modal h4 { color: var(--text-primary); font-size: 1.15rem; margin: 0 0 .5rem; }
+.speed-modal p { color: var(--text-secondary); font-size: .9rem; line-height: 1.5; margin: 0 0 1.25rem; }
+.speed-modal-actions { display: flex; justify-content: flex-end; gap: .6rem; flex-wrap: wrap; }
+.speed-release-panel { margin-bottom: 1.25rem; position: relative; z-index: 1; }
+.speed-release-notice { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 1.25rem; border: 1px solid rgba(251,146,60,.3); border-radius: .85rem; background: rgba(251,146,60,.08); }
+.speed-release-notice p { margin: 0; color: var(--text-primary); font-size: .9rem; }
+.speed-release-warning { margin: 0 0 1.25rem; padding: .7rem .9rem; border: 1px solid rgba(251,146,60,.3); border-radius: .7rem; background: rgba(251,146,60,.08); color: var(--accent-orange); font-size: .8rem; }
+.speed-live-metrics-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 0; }
+.speed-live-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; flex-shrink: 0; }
+.speed-ball-status { display: flex; flex-direction: column; gap: .2rem; margin: 0 0 1.25rem; padding: 1rem 1.25rem; border-radius: .85rem; border: 1px solid var(--border); }
+.speed-ball-status strong { color: var(--text-primary); font-size: 1.15rem; letter-spacing: -.02em; }
+.speed-ball-status span { color: var(--text-secondary); font-size: .85rem; }
+.speed-ball-status.is-waiting { border-color: rgba(34,211,238,.35); background: rgba(34,211,238,.07); }
+.speed-ball-status.is-done { border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.07); }
 .speed-live-sensor { display: flex; align-items: center; gap: .6rem; margin: 0 0 1.25rem; color: var(--text-muted); font-size: .75rem; }
 @media (max-width: 760px) {
   .speed-live-heading { align-items: flex-start; }
