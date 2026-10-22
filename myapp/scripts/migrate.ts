@@ -28,6 +28,14 @@ async function migrate() {
       ON public.users(email);
   `);
 
+  // Shoulder-to-wrist length in metres. Release speed is calculated from it, and a
+  // user can't start a session until it is set.
+  await pool.query(`
+    ALTER TABLE public.users
+      ADD COLUMN IF NOT EXISTS arm_length_m NUMERIC(4,2)
+      CHECK (arm_length_m BETWEEN 0.30 AND 1.50);
+  `);
+
   // 3. Devices table
   await pool.query(`
     CREATE TABLE IF NOT EXISTS public.devices (
@@ -168,9 +176,72 @@ async function migrate() {
     );
   `);
 
+  // Only when sensor_readings has session_no: the shared database may hold a
+  // different sensor_readings design (delivery_id / event_type) until we agree one.
   await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_readings_session_time
-      ON public.sensor_readings(user_id, session_no, device_timestamp_ms);
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'sensor_readings'
+          AND column_name = 'session_no'
+      ) THEN
+        CREATE INDEX IF NOT EXISTS idx_readings_session_time
+          ON public.sensor_readings(user_id, session_no, device_timestamp_ms);
+      END IF;
+    END $$;
+  `);
+
+  // Release speed of each delivery, calculated from the glove's DELIVERY_END reading
+  // (see lib/release-speed.ts). It only reads sensor_readings; reading_id points at the
+  // row used, with no foreign key because that table belongs to the glove backend.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS public.delivery_speeds (
+      user_id        INTEGER NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+      delivery_id    BIGINT NOT NULL,
+      reading_id     BIGINT NOT NULL,
+      arm_length_m   NUMERIC(4,2) NOT NULL,
+      accel_range_g  NUMERIC(6,1) NOT NULL,
+      a_mag_g        NUMERIC(8,3) NOT NULL,
+      saturated      BOOLEAN NOT NULL,
+      speed_kmh      NUMERIC(6,1) NOT NULL,
+      released_at    TIMESTAMPTZ NOT NULL,
+      computed_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, delivery_id)
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_delivery_speeds_user_released
+      ON public.delivery_speeds(user_id, released_at DESC);
+  `);
+
+  // The balls of a live session. A ball is "armed" when the player starts the session (ball 1)
+  // or clicks Next ball; the first glove delivery released after that moment is linked to it
+  // (delivery_id), and the player has to click Next ball again before the next one counts.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS public.session_balls (
+      user_id      INTEGER NOT NULL,
+      session_no   INTEGER NOT NULL,
+      ball_no      INTEGER NOT NULL,
+      armed_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      delivery_id  BIGINT,
+      speed_kmh    NUMERIC(6,1),
+      a_mag_g      NUMERIC(8,3),
+      saturated    BOOLEAN,
+      released_at  TIMESTAMPTZ,
+      PRIMARY KEY (user_id, session_no, ball_no),
+      FOREIGN KEY (user_id, session_no)
+        REFERENCES public.speed_sessions(user_id, session_no) ON DELETE CASCADE
+    );
+  `);
+
+  // A glove delivery can only be counted once.
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_session_balls_delivery
+      ON public.session_balls(user_id, delivery_id)
+      WHERE delivery_id IS NOT NULL;
   `);
 
   // Block Supabase's public REST API (anon/authenticated roles) from these tables.
@@ -181,6 +252,8 @@ async function migrate() {
     ALTER TABLE speed_deliveries ENABLE ROW LEVEL SECURITY;
     ALTER TABLE public.devices          ENABLE ROW LEVEL SECURITY;
     ALTER TABLE public.sensor_readings  ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.delivery_speeds  ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.session_balls    ENABLE ROW LEVEL SECURITY;
   `);
 
   console.log('✅ Migration complete!');
