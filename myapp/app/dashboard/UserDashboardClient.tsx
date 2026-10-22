@@ -6,6 +6,7 @@ import ThemeToggle from '../../components/ThemeToggle';
 import PersonalizedRecommendation from './PersonalizedRecommendation';
 import ProfileSettings from './ProfileSettings';
 import SpeedStatus, { LiveSessionPanel } from './SpeedStatus';
+import { ReleaseSpeedPanel, useReleaseSpeeds } from './ReleaseSpeed';
 import WristAngleStatusPage from './WristAngleStatusPage';
 
 interface UserProps {
@@ -211,9 +212,9 @@ export default function UserDashboardClient({ user }: UserProps) {
 
         {/* Page Content */}
         <div style={{ flex: 1, padding: '2rem', maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
-          {activeTab === 'delivery' && <DeliveryPerformance />}
+          {activeTab === 'delivery' && <DeliveryPerformance onGoToProfile={() => selectTab('settings')} />}
           {activeTab === 'Device Register' && <DeviceRegister />}
-          {activeTab === 'speed' && <SpeedStatus onGoToLive={() => selectTab('delivery')} />}
+          {activeTab === 'speed' && <SpeedStatus onGoToLive={() => selectTab('delivery')} onGoToProfile={() => selectTab('settings')} />}
           {activeTab === 'grip' && <ComingSoonTab label="Grip Status" />}
           {activeTab === 'wrist' && <WristAngleStatusPage />}
           {activeTab === 'recommendations' && <PersonalizedRecommendation />}
@@ -243,8 +244,14 @@ const prediction: DeliveryMetric & { speedRange: [number, number] } = {
   wristAngle: 91,
 };
 
-function DeliveryPerformance() {
-  const speedDifference = Math.abs(latestDelivery.speed - prediction.speed);
+function DeliveryPerformance({ onGoToProfile }: { onGoToProfile: () => void }) {
+  const releaseSpeeds = useReleaseSpeeds();
+  // The speed comes from the glove once a delivery has been received; grip and wrist angle are still sample values.
+  const currentDelivery: DeliveryMetric = {
+    ...latestDelivery,
+    speed: releaseSpeeds.data?.deliveries[0]?.speedKmh ?? latestDelivery.speed,
+  };
+  const speedDifference = Math.abs(currentDelivery.speed - prediction.speed);
   const speedDeviation = (speedDifference / prediction.speed) * 100;
   const gripDifference = Math.abs(latestDelivery.grip - prediction.grip);
   const wristDifference = Math.abs(latestDelivery.wristAngle - prediction.wristAngle);
@@ -267,10 +274,12 @@ function DeliveryPerformance() {
         <div className="badge badge-green"><div className="pulse-dot" />Data received</div>
       </div>
 
-      <LiveSessionPanel />
+      <LiveSessionPanel onGoToProfile={onGoToProfile} />
+
+      <ReleaseSpeedPanel data={releaseSpeeds.data} failed={releaseSpeeds.failed} onGoToProfile={onGoToProfile} />
 
       <div className="delivery-columns">
-        <DeliveryCard title="Current Delivery" metrics={latestDelivery} />
+        <DeliveryCard title="Current Delivery" metrics={currentDelivery} />
         <DeliveryCard title="Prediction" metrics={prediction} predicted />
       </div>
 
