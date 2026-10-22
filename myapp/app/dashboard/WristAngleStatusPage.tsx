@@ -22,27 +22,44 @@ export default function WristAngleStatusPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/user/wrist-angle', { cache: 'no-store' })
-      .then(async (response) => {
+
+    const loadDeliveries = async () => {
+      try {
+        const response = await fetch('/api/user/wrist-angle', { cache: 'no-store' });
         const payload = await response.json();
-        if (!response.ok || !payload.success) throw new Error(payload.message || `Request failed (${response.status})`);
-        return payload;
-      })
-      .then((payload: { data?: Array<{ delivery_id: number | string; created_at: string; start_timestamp_ms: number | string; end_timestamp_ms: number | string; wrist_angle_start_deg: number | string | null; wrist_angle_release_deg: number | string | null }> }) => {
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || `Request failed (${response.status})`);
+        }
         if (cancelled) return;
-        setDeliveries((payload.data ?? []).map((row) => ({
-          deliveryId: Number(row.delivery_id), createdAt: row.created_at,
-          startTimestamp: Number(row.start_timestamp_ms), endTimestamp: Number(row.end_timestamp_ms),
+
+        setDeliveries((payload.data ?? []).map((row: { delivery_id: number | string; created_at: string; start_timestamp_ms: number | string; end_timestamp_ms: number | string; wrist_angle_start_deg: number | string | null; wrist_angle_release_deg: number | string | null }) => ({
+          deliveryId: Number(row.delivery_id),
+          createdAt: row.created_at,
+          startTimestamp: Number(row.start_timestamp_ms),
+          endTimestamp: Number(row.end_timestamp_ms),
           startAngle: row.wrist_angle_start_deg === null ? null : Number(row.wrist_angle_start_deg),
           actualAngle: row.wrist_angle_release_deg === null ? null : Number(row.wrist_angle_release_deg),
         })));
-      })
-      .catch((error) => {
+        setHistoryError('');
+      } catch (error) {
         if (cancelled) return;
         console.error('Could not load wrist angle history:', error);
         setHistoryError('Could not load wrist angle history. Please refresh the page.');
-      });
-    return () => { cancelled = true; };
+      }
+    };
+
+    void loadDeliveries();
+    const refreshTimer = window.setInterval(() => { void loadDeliveries(); }, 5000);
+    const refreshOnReturn = () => {
+      if (document.visibilityState === 'visible') void loadDeliveries();
+    };
+    document.addEventListener('visibilitychange', refreshOnReturn);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshTimer);
+      document.removeEventListener('visibilitychange', refreshOnReturn);
+    };
   }, []);
 
   const latest = deliveries[0] ?? null;
