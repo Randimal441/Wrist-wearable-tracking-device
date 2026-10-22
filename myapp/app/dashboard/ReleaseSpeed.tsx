@@ -11,6 +11,8 @@ export interface ReleaseSpeedRow {
     releasedAt: string;
     sessionNo: number | null;
     ballNo: number | null;
+    gripPercent: number | null;
+    wristAngleDeg: number | null;
 }
 
 export interface ReleaseSpeedsData {

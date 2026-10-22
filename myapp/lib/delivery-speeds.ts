@@ -12,6 +12,8 @@ export interface DeliverySpeed {
   releasedAt: string;
   sessionNo: number | null; // the live session it was counted in, or null for a delivery outside a session
   ballNo: number | null;
+  gripPercent: number | null;   // average of the three release-point pressure sensors, % of 4095
+  wristAngleDeg: number | null; // wrist angle at release, from delivery_sensor_summary
 }
 
 const MAX_ROWS_PER_SYNC = 200;
@@ -70,18 +72,41 @@ export async function syncDeliverySpeeds(userId: number, armLengthM: number): Pr
 // The user's most recent deliveries with their release speed, newest first. Every delivery
 // the glove sent is included, whether or not it was bowled in a live session.
 export async function listDeliverySpeeds(userId: number, limit = 20): Promise<DeliverySpeed[]> {
-  const result = await pool.query(
-    `SELECT d.delivery_id::text AS delivery_id, d.speed_kmh::float AS speed_kmh, d.a_mag_g::float AS a_mag_g,
+  // Grip and wrist angle are the same figures the Grip Status and Wrist Angle pages show,
+  // taken from the delivery summary the glove backend writes (NULL until it exists).
+  const base = `SELECT d.delivery_id::text AS delivery_id, d.speed_kmh::float AS speed_kmh, d.a_mag_g::float AS a_mag_g,
             d.saturated, d.arm_length_m::float AS arm_length_m, d.released_at,
-            sb.session_no, sb.ball_no
+            sb.session_no, sb.ball_no`;
+  const from = `
        FROM public.delivery_speeds d
        LEFT JOIN public.session_balls sb
-              ON sb.user_id = d.user_id AND sb.delivery_id = d.delivery_id
+              ON sb.user_id = d.user_id AND sb.delivery_id = d.delivery_id`;
+  const tail = `
       WHERE d.user_id = $1
       ORDER BY d.released_at DESC, d.delivery_id DESC
-      LIMIT $2`,
-    [userId, limit]
-  );
+      LIMIT $2`;
+
+  let result;
+  try {
+    result = await pool.query(
+      `${base},
+            CASE WHEN s.end_pressure1_raw IS NULL OR s.end_pressure2_raw IS NULL OR s.end_pressure3_raw IS NULL
+                 THEN NULL
+                 ELSE ((LEAST(GREATEST(s.end_pressure1_raw, 0), 4095)
+                      + LEAST(GREATEST(s.end_pressure2_raw, 0), 4095)
+                      + LEAST(GREATEST(s.end_pressure3_raw, 0), 4095)) / 3.0) / 4095 * 100
+            END::float AS grip_percent,
+            s.wrist_angle_release_deg::float AS wrist_angle_deg
+       ${from}
+       LEFT JOIN public.delivery_sensor_summary s
+              ON s.user_id = d.user_id AND s.delivery_id = d.delivery_id${tail}`,
+      [userId, limit]
+    );
+  } catch (error) {
+    // 42P01: the glove backend's summary table doesn't exist in this database yet.
+    if ((error as { code?: string }).code !== '42P01') throw error;
+    result = await pool.query(`${base}${from}${tail}`, [userId, limit]);
+  }
   return result.rows.map((r) => ({
     deliveryId: r.delivery_id,
     speedKmh: r.speed_kmh,
@@ -91,5 +116,7 @@ export async function listDeliverySpeeds(userId: number, limit = 20): Promise<De
     releasedAt: r.released_at,
     sessionNo: r.session_no,
     ballNo: r.ball_no,
+    gripPercent: r.grip_percent ?? null,
+    wristAngleDeg: r.wrist_angle_deg ?? null,
   }));
 }
