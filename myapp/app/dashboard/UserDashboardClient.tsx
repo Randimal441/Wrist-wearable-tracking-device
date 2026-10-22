@@ -7,6 +7,7 @@ import PersonalizedRecommendation from './PersonalizedRecommendation';
 import ProfileSettings from './ProfileSettings';
 import SpeedStatus, { LiveSessionPanel } from './SpeedStatus';
 import WristAngleStatusPage from './WristAngleStatusPage';
+import GripStatusPage from './GripStatusPage';
 
 interface UserProps {
   user: { name: string; email: string };
@@ -214,7 +215,7 @@ export default function UserDashboardClient({ user }: UserProps) {
           {activeTab === 'delivery' && <DeliveryPerformance />}
           {activeTab === 'Device Register' && <DeviceRegister />}
           {activeTab === 'speed' && <SpeedStatus onGoToLive={() => selectTab('delivery')} />}
-          {activeTab === 'grip' && <ComingSoonTab label="Grip Status" />}
+          {activeTab === 'grip' && <GripStatusPage />}
           {activeTab === 'wrist' && <WristAngleStatusPage />}
           {activeTab === 'recommendations' && <PersonalizedRecommendation />}
           {activeTab === 'settings' && <ProfileSettings user={user} onSaved={() => router.refresh()} />}
