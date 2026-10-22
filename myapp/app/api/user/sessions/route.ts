@@ -39,9 +39,8 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/user/sessions — start a live session. The glove's readings are stored
-// against the user's open session, so there is at most one open session per user:
-// if one is already open (e.g. the page was reloaded) it is returned instead.
+// POST /api/user/sessions — start a live session and arm its first ball. A user has at
+// most one open session: if one is already open (e.g. the page was reloaded) it is returned.
 export async function POST(req: NextRequest) {
   const payload = authenticate(req);
   if (!payload) {
@@ -56,12 +55,28 @@ export async function POST(req: NextRequest) {
     await client.query('BEGIN');
 
     // Lock the user's row so two starts at once can't pick the same session number.
-    const user = await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [payload.userId]);
+    const user = await client.query(
+      'SELECT arm_length_m FROM users WHERE id = $1 FOR UPDATE',
+      [payload.userId]
+    );
     if (user.rows.length === 0) {
       await client.query('ROLLBACK');
       return NextResponse.json(
         { success: false, message: 'User not found.' },
         { status: 404 }
+      );
+    }
+
+    // Release speed is calculated from the arm length, so it has to be set first.
+    if (user.rows[0].arm_length_m === null) {
+      await client.query('ROLLBACK');
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'ARM_LENGTH_REQUIRED',
+          message: 'Please update your arm length in your profile.',
+        },
+        { status: 403 }
       );
     }
 
@@ -74,6 +89,13 @@ export async function POST(req: NextRequest) {
       [payload.userId]
     );
     if (open.rows.length > 0) {
+      // Reloaded page: keep the session and its balls. Arm ball 1 only if it has none yet.
+      await client.query(
+        `INSERT INTO session_balls (user_id, session_no, ball_no)
+         SELECT $1, $2, 1
+         WHERE NOT EXISTS (SELECT 1 FROM session_balls WHERE user_id = $1 AND session_no = $2)`,
+        [payload.userId, open.rows[0].session_no]
+      );
       await client.query('COMMIT');
       return NextResponse.json({
         success: true,
@@ -88,6 +110,11 @@ export async function POST(req: NextRequest) {
        WHERE user_id = $1
        RETURNING session_no, started_at`,
       [payload.userId]
+    );
+    // The first ball is ready as soon as the session starts.
+    await client.query(
+      'INSERT INTO session_balls (user_id, session_no, ball_no) VALUES ($1, $2, 1)',
+      [payload.userId, created.rows[0].session_no]
     );
     await client.query('COMMIT');
 
