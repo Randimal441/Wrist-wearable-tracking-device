@@ -228,8 +228,8 @@ export default function UserDashboardClient({ user }: UserProps) {
 
 interface DeliveryMetric {
   speed: number;
-  grip: number;
-  wristAngle: number;
+  grip: number | null;       // % (average release-point pressure)
+  wristAngle: number | null; // degrees at release
 }
 
 const latestDelivery: DeliveryMetric = {
@@ -247,15 +247,21 @@ const prediction: DeliveryMetric & { speedRange: [number, number] } = {
 
 function DeliveryPerformance({ onGoToProfile }: { onGoToProfile: () => void }) {
   const releaseSpeeds = useReleaseSpeeds();
-  // The speed comes from the glove once a delivery has been received; grip and wrist angle are still sample values.
-  const currentDelivery: DeliveryMetric = {
-    ...latestDelivery,
-    speed: releaseSpeeds.data?.deliveries[0]?.speedKmh ?? latestDelivery.speed,
-  };
+  // Speed, grip and wrist angle all come from the glove's latest delivery and update after every
+  // ball. A figure the glove hasn't reported for that delivery is null (shown as a dash). Until the
+  // first delivery arrives, the sample values are shown.
+  const newest = releaseSpeeds.data?.deliveries[0];
+  const currentDelivery: DeliveryMetric = newest
+    ? {
+        speed: newest.speedKmh,
+        grip: newest.gripPercent === null ? null : Math.round(newest.gripPercent * 10) / 10,
+        wristAngle: newest.wristAngleDeg === null ? null : Math.round(newest.wristAngleDeg * 10) / 10,
+      }
+    : latestDelivery;
   const speedDifference = Math.abs(currentDelivery.speed - prediction.speed);
   const speedDeviation = (speedDifference / prediction.speed) * 100;
-  const gripDifference = Math.abs(latestDelivery.grip - prediction.grip);
-  const wristDifference = Math.abs(latestDelivery.wristAngle - prediction.wristAngle);
+  const gripDifference = currentDelivery.grip === null || prediction.grip === null ? 0 : Math.abs(currentDelivery.grip - prediction.grip);
+  const wristDifference = currentDelivery.wristAngle === null || prediction.wristAngle === null ? 0 : Math.abs(currentDelivery.wristAngle - prediction.wristAngle);
   const largestDifference = Math.max(speedDeviation, gripDifference, wristDifference);
 
   const issue = largestDifference === gripDifference
@@ -280,16 +286,16 @@ function DeliveryPerformance({ onGoToProfile }: { onGoToProfile: () => void }) {
         <DeliveryCard title="Prediction" metrics={prediction} predicted />
       </div>
 
+      <LiveSessionPanel onGoToProfile={onGoToProfile} />
+
+      <ReleaseSpeedPanel data={releaseSpeeds.data} failed={releaseSpeeds.failed} onGoToProfile={onGoToProfile} />
+
       <section className="call-analysis glass-card" aria-labelledby="call-analysis-title">
         <div className="analysis-icon" style={{ color: issue.color }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 3 2.5 20h19L12 3Z" /><path d="M12 9v4" /><path d="M12 17h.01" />
           </svg>
         </div>
-      <LiveSessionPanel onGoToProfile={onGoToProfile} />
-
-      <ReleaseSpeedPanel data={releaseSpeeds.data} failed={releaseSpeeds.failed} onGoToProfile={onGoToProfile} />
-
         <div className="analysis-copy">
           <span className="eyebrow">Call analysis</span>
           <h4 id="call-analysis-title">{issue.label}</h4>
@@ -329,19 +335,19 @@ function DeliveryCard({
         />
         <MetricRow
           label="Grip"
-          value={`${metrics.grip}`}
-          unit="%"
+          value={metrics.grip === null ? '—' : `${metrics.grip}`}
+          unit={metrics.grip === null ? '' : '%'}
           icon={<path d="M8 11V5a2 2 0 1 1 4 0v5M12 10V3a2 2 0 1 1 4 0v8M16 10V6a2 2 0 1 1 4 0v8c0 4-2 7-7 7h-1c-3 0-5-1-7-4l-2-3a2 2 0 0 1 3-2l2 2V8a2 2 0 1 1 4 0v3" />}
           accent="var(--accent-orange)"
-          percentage={metrics.grip}
+          percentage={metrics.grip ?? 0}
         />
         <MetricRow
           label="Wrist angle"
-          value={`${metrics.wristAngle}`}
-          unit="%"
+          value={metrics.wristAngle === null ? '—' : `${metrics.wristAngle}`}
+          unit={metrics.wristAngle === null ? '' : '°'}
           icon={<><circle cx="12" cy="12" r="9" /><path d="M12 3v9l6 3" /></>}
           accent="var(--accent-teal)"
-          percentage={metrics.wristAngle}
+          percentage={metrics.wristAngle === null ? 0 : Math.min(100, (Math.abs(metrics.wristAngle) / 180) * 100)}
         />
       </div>
     </section>
