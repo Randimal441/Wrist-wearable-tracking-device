@@ -275,11 +275,7 @@ function DeliveryPerformance({ onGoToProfile }: { onGoToProfile: () => void }) {
         <div className="badge badge-green"><div className="pulse-dot" />Data received</div>
       </div>
 
-      <LiveSessionPanel onGoToProfile={onGoToProfile} />
-
-      <ReleaseSpeedPanel data={releaseSpeeds.data} failed={releaseSpeeds.failed} onGoToProfile={onGoToProfile} />
-
-      <div className="delivery-columns">
+      <div className="delivery-columns" style={{ marginBottom: '1.25rem' }}>
         <DeliveryCard title="Current Delivery" metrics={currentDelivery} />
         <DeliveryCard title="Prediction" metrics={prediction} predicted />
       </div>
@@ -290,6 +286,10 @@ function DeliveryPerformance({ onGoToProfile }: { onGoToProfile: () => void }) {
             <path d="M12 3 2.5 20h19L12 3Z" /><path d="M12 9v4" /><path d="M12 17h.01" />
           </svg>
         </div>
+      <LiveSessionPanel onGoToProfile={onGoToProfile} />
+
+      <ReleaseSpeedPanel data={releaseSpeeds.data} failed={releaseSpeeds.failed} onGoToProfile={onGoToProfile} />
+
         <div className="analysis-copy">
           <span className="eyebrow">Call analysis</span>
           <h4 id="call-analysis-title">{issue.label}</h4>
