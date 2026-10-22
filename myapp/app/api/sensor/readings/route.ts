@@ -257,12 +257,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let client: Awaited<ReturnType<typeof pool.connect>> | undefined;
-  const samples = body.samples as Sample[];
-
-  let client:
-    | PoolClient
-    | undefined;
+  let client: PoolClient | undefined;
 
   try {
     client = await pool.connect();
