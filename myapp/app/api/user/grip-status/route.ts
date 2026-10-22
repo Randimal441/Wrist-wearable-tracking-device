@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { getUserFromRequest } from '@/lib/api-auth';
@@ -15,51 +16,54 @@ export async function GET(req: NextRequest) {
   try {
     const result = await pool.query(
       `SELECT
-         sr.id,
-         sr.session_id,
-         sr.sample_index,
-         sr.device_timestamp_ms,
-         sr.pressure1_raw,
-         sr.pressure2_raw,
-         sr.pressure3_raw,
-         sr.pressure1_pa,
-         sr.pressure2_pa,
-         sr.pressure3_pa,
-         sr.imu1_ax,
-         sr.imu1_ay,
-         sr.imu1_az,
-         sr.imu1_gx,
-         sr.imu1_gy,
-         sr.imu1_gz,
-         sr.imu2_ax,
-         sr.imu2_ay,
-         sr.imu2_az,
-         sr.imu2_gx,
-         sr.imu2_gy,
-         sr.imu2_gz,
-         sr.received_at,
-         bs.session_name,
-         bs.started_at,
-         d.id AS device_id,
-         d.device_name
-       FROM public.sensor_readings sr
-       JOIN public.bowling_sessions bs
-         ON bs.id = sr.session_id
-       JOIN public.devices d
-         ON d.id = bs.device_id
-       WHERE bs.user_id = $1
-       ORDER BY sr.received_at DESC, sr.id DESC
+         id,
+         user_id,
+         delivery_id,
+         start_timestamp_ms,
+         end_timestamp_ms,
+
+         start_imu1_gx,
+         start_imu1_gy,
+         start_imu1_gz,
+         start_imu2_gx,
+         start_imu2_gy,
+         start_imu2_gz,
+
+         start_pressure1_raw,
+         start_pressure2_raw,
+         start_pressure3_raw,
+
+         end_imu1_gx,
+         end_imu1_gy,
+         end_imu1_gz,
+         end_imu2_gx,
+         end_imu2_gy,
+         end_imu2_gz,
+
+         end_pressure1_raw,
+         end_pressure2_raw,
+         end_pressure3_raw,
+
+         wrist_angle_x_deg,
+         wrist_angle_y_deg,
+         wrist_angle_z_deg,
+         wrist_angle_start_deg,
+         wrist_angle_release_deg,
+
+         created_at
+       FROM public.delivery_sensor_summary
+       WHERE user_id = $1
+       ORDER BY created_at DESC, id DESC
        LIMIT 30`,
       [user.userId]
     );
 
     const rows = result.rows;
-    const latest = rows[0] ?? null;
 
     return NextResponse.json({
       success: true,
       data: {
-        latest,
+        latest: rows[0] ?? null,
         history: rows,
       },
     });
