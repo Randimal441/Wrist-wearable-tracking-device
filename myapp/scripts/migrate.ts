@@ -1,3 +1,4 @@
+
 import pool from '../lib/db';
 
 async function migrate() {
@@ -21,7 +22,7 @@ async function migrate() {
     ALTER TABLE public.users
       ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'user';
   `);
-  
+
   // 2. User indexes
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_users_email
@@ -43,19 +44,19 @@ async function migrate() {
     );
   `);
 
-  // Add device_token to databases where devices already exists.
+  // Support existing devices tables.
   await pool.query(`
     ALTER TABLE public.devices
       ADD COLUMN IF NOT EXISTS device_token TEXT;
   `);
 
-  // Allow raw-token authentication for newly registered devices. Only databases
-  // created by an older version of this script have device_secret_hash.
+  // Older schemas may contain device_secret_hash.
   await pool.query(`
     DO $$
     BEGIN
       IF EXISTS (
-        SELECT 1 FROM information_schema.columns
+        SELECT 1
+        FROM information_schema.columns
         WHERE table_schema = 'public'
           AND table_name = 'devices'
           AND column_name = 'device_secret_hash'
@@ -66,18 +67,18 @@ async function migrate() {
     END $$;
   `);
 
-  // Enforce uniqueness for stored raw tokens.
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS devices_device_token_unique
       ON public.devices(device_token)
       WHERE device_token IS NOT NULL;
   `);
 
-  // Sessions are numbered per user: user 1 has sessions 1, 2, ... and user 2
-  // starts again at session 1. (user_id, session_no) identifies a session.
+  // 4. Speed sessions (retained for the existing app)
+  // Sensor readings no longer depend on these sessions.
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS speed_sessions (
-      user_id          INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    CREATE TABLE IF NOT EXISTS public.speed_sessions (
+      user_id          INTEGER NOT NULL
+        REFERENCES public.users(id) ON DELETE CASCADE,
       session_no       INTEGER NOT NULL,
       started_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       ended_at         TIMESTAMPTZ,
@@ -92,26 +93,26 @@ async function migrate() {
 
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_speed_sessions_user_started
-      ON speed_sessions(user_id, started_at DESC);
+      ON public.speed_sessions(user_id, started_at DESC);
   `);
 
+  // 5. Speed deliveries (existing feature)
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS speed_deliveries (
+    CREATE TABLE IF NOT EXISTS public.speed_deliveries (
       user_id     INTEGER NOT NULL,
       session_no  INTEGER NOT NULL,
       delivery_no INTEGER NOT NULL,
       speed_kmh   NUMERIC(5,1) NOT NULL,
       PRIMARY KEY (user_id, session_no, delivery_no),
       FOREIGN KEY (user_id, session_no)
-        REFERENCES speed_sessions(user_id, session_no) ON DELETE CASCADE
+        REFERENCES public.speed_sessions(user_id, session_no)
+        ON DELETE CASCADE
     );
   `);
 
-  // A speed session is "open" (ended_at IS NULL) while the user is bowling: it
-  // starts empty and its totals are filled in when the session ends. These
-  // ALTERs bring databases created before this change up to date.
+  // Make existing speed-session schemas compatible.
   await pool.query(`
-    ALTER TABLE speed_sessions
+    ALTER TABLE public.speed_sessions
       ALTER COLUMN ended_at DROP NOT NULL,
       ALTER COLUMN started_at SET DEFAULT NOW(),
       ALTER COLUMN deliveries_count SET DEFAULT 0,
@@ -120,15 +121,20 @@ async function migrate() {
       ALTER COLUMN min_speed DROP NOT NULL;
   `);
 
-  // Raw readings streamed by the glove (2 IMUs + 3 pressure sensors) while a
-  // speed session is open. Each reading belongs to one (user_id, session_no).
+  // 6. Independent IoT sensor readings
   await pool.query(`
     CREATE TABLE IF NOT EXISTS public.sensor_readings (
       id BIGSERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      session_no INTEGER NOT NULL,
-      sample_index BIGINT NOT NULL
-        CHECK (sample_index >= 0),
+
+      user_id INTEGER NOT NULL
+        REFERENCES public.users(id) ON DELETE CASCADE,
+
+      delivery_id BIGINT NOT NULL,
+      event_type VARCHAR(20) NOT NULL
+        CHECK (
+          event_type IN ('DELIVERY_START', 'DELIVERY_END')
+        ),
+
       device_timestamp_ms BIGINT NOT NULL
         CHECK (device_timestamp_ms >= 0),
 
@@ -138,9 +144,6 @@ async function migrate() {
       imu1_gx DOUBLE PRECISION NOT NULL,
       imu1_gy DOUBLE PRECISION NOT NULL,
       imu1_gz DOUBLE PRECISION NOT NULL,
-      imu1_mx DOUBLE PRECISION NOT NULL,
-      imu1_my DOUBLE PRECISION NOT NULL,
-      imu1_mz DOUBLE PRECISION NOT NULL,
 
       imu2_ax DOUBLE PRECISION NOT NULL,
       imu2_ay DOUBLE PRECISION NOT NULL,
@@ -148,9 +151,6 @@ async function migrate() {
       imu2_gx DOUBLE PRECISION NOT NULL,
       imu2_gy DOUBLE PRECISION NOT NULL,
       imu2_gz DOUBLE PRECISION NOT NULL,
-      imu2_mx DOUBLE PRECISION NOT NULL,
-      imu2_my DOUBLE PRECISION NOT NULL,
-      imu2_mz DOUBLE PRECISION NOT NULL,
 
       pressure1_raw INTEGER NOT NULL,
       pressure2_raw INTEGER NOT NULL,
@@ -160,27 +160,89 @@ async function migrate() {
       pressure2_pa DOUBLE PRECISION,
       pressure3_pa DOUBLE PRECISION,
 
-      received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-      UNIQUE (user_id, session_no, sample_index),
-      FOREIGN KEY (user_id, session_no)
-        REFERENCES speed_sessions(user_id, session_no) ON DELETE CASCADE
+      received_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
+  // 7. Migrate existing sensor_readings tables.
+  // Remove dependencies on training sessions and old sample indexes.
   await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_readings_session_time
-      ON public.sensor_readings(user_id, session_no, device_timestamp_ms);
+    ALTER TABLE public.sensor_readings
+      DROP CONSTRAINT IF EXISTS
+        sensor_readings_user_id_session_no_fkey,
+      DROP CONSTRAINT IF EXISTS
+        sensor_readings_user_id_session_no_sample_index_key,
+      DROP CONSTRAINT IF EXISTS
+        sensor_readings_event_type_check;
+
+    DROP INDEX IF EXISTS public.idx_readings_session_time;
+
+    ALTER TABLE public.sensor_readings
+      DROP COLUMN IF EXISTS session_no,
+      DROP COLUMN IF EXISTS sample_index,
+      DROP COLUMN IF EXISTS imu1_mx,
+      DROP COLUMN IF EXISTS imu1_my,
+      DROP COLUMN IF EXISTS imu1_mz,
+      DROP COLUMN IF EXISTS imu2_mx,
+      DROP COLUMN IF EXISTS imu2_my,
+      DROP COLUMN IF EXISTS imu2_mz;
+
+    ALTER TABLE public.sensor_readings
+      ADD COLUMN IF NOT EXISTS delivery_id BIGINT,
+      ADD COLUMN IF NOT EXISTS event_type VARCHAR(20);
   `);
 
-  // Block Supabase's public REST API (anon/authenticated roles) from these tables.
-  // No policies are added: the app connects as the table owner, which bypasses RLS.
+  // Existing rows cannot be reliably assigned to delivery groups.
+  // Keep their new columns nullable for backward compatibility.
+  // New API inserts should always supply both values.
   await pool.query(`
-    ALTER TABLE users            ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE speed_sessions   ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE speed_deliveries ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE public.devices          ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE public.sensor_readings  ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.sensor_readings
+      ADD CONSTRAINT sensor_readings_event_type_check
+      CHECK (
+        event_type IS NULL
+        OR event_type IN ('DELIVERY_START', 'DELIVERY_END')
+      );
+  `);
+
+  // Ensure user ownership remains linked to users, not speed_sessions.
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'public.sensor_readings'::regclass
+          AND conname = 'sensor_readings_user_id_fkey'
+      ) THEN
+        ALTER TABLE public.sensor_readings
+          ADD CONSTRAINT sensor_readings_user_id_fkey
+          FOREIGN KEY (user_id)
+          REFERENCES public.users(id)
+          ON DELETE CASCADE;
+      END IF;
+    END $$;
+  `);
+
+  // Indexes for retrieving readings independently of sessions.
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_sensor_readings_user_received
+      ON public.sensor_readings(user_id, received_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_sensor_readings_delivery
+      ON public.sensor_readings(user_id, delivery_id);
+
+    CREATE INDEX IF NOT EXISTS idx_sensor_readings_device_time
+      ON public.sensor_readings(user_id, device_timestamp_ms);
+  `);
+
+  // 8. Row Level Security
+  // No policies are created by this migration.
+  await pool.query(`
+    ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.speed_sessions ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.speed_deliveries ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.devices ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.sensor_readings ENABLE ROW LEVEL SECURITY;
   `);
 
   console.log('✅ Migration complete!');

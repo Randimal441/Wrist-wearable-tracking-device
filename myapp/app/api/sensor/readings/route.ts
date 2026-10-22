@@ -1,6 +1,5 @@
-// app/api/sensor/readings/route.ts
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import {
   getDeviceFromRequest,
@@ -12,20 +11,19 @@ type Vec3 = [number, number, number];
 type Imu = {
   accel: Vec3;
   gyro: Vec3;
-  mag: Vec3;
 };
 
-type Pressure = {
-  raw: [number, number, number];
-  pa?: [number | null, number | null, number | null];
-};
+type EventType = 'DELIVERY_START' | 'DELIVERY_END';
 
 type Sample = {
-  sampleIndex: number;
-  timestampMs: number;
+  deliveryId: number;
+  eventType: EventType;
+  deviceTimestampMs: number;
   imu1: Imu;
   imu2: Imu;
-  pressure: Pressure;
+  pressure: {
+    raw: [number, number, number];
+  };
 };
 
 function isRecord(
@@ -47,58 +45,50 @@ function isVec3(value: unknown): value is Vec3 {
 }
 
 function isImu(value: unknown): value is Imu {
-  if (!isRecord(value)) return false;
+  if (!isRecord(value)) {
+    return false;
+  }
 
   return (
     isVec3(value.accel) &&
-    isVec3(value.gyro) &&
-    isVec3(value.mag)
+    isVec3(value.gyro)
   );
 }
 
-function isPressure(value: unknown): value is Pressure {
-  if (!isRecord(value)) return false;
-
-  const raw = value.raw;
-  const pa = value.pa;
-
+function isPressure(
+  value: unknown
+): value is { raw: [number, number, number] } {
   if (
-    !Array.isArray(raw) ||
-    raw.length !== 3 ||
-    !raw.every(
+    !isRecord(value) ||
+    !Array.isArray(value.raw)
+  ) {
+    return false;
+  }
+
+  return (
+    value.raw.length === 3 &&
+    value.raw.every(
       (v) =>
         Number.isSafeInteger(v) &&
         v >= 0 &&
         v <= 10_000_000
     )
-  ) {
-    return false;
-  }
-
-  if (
-    pa !== undefined &&
-    (
-      !Array.isArray(pa) ||
-      pa.length !== 3 ||
-      !pa.every(
-        (v) => v === null || isFiniteNumber(v)
-      )
-    )
-  ) {
-    return false;
-  }
-
-  return true;
+  );
 }
 
 function isSample(value: unknown): value is Sample {
-  if (!isRecord(value)) return false;
+  if (!isRecord(value)) {
+    return false;
+  }
 
   if (
-    !Number.isSafeInteger(value.sampleIndex) ||
-    (value.sampleIndex as number) < 0 ||
-    !Number.isSafeInteger(value.timestampMs) ||
-    (value.timestampMs as number) < 0 ||
+    !Number.isSafeInteger(value.deliveryId) ||
+    (value.deliveryId as number) < 1 ||
+    !['DELIVERY_START', 'DELIVERY_END'].includes(
+      value.eventType as string
+    ) ||
+    !Number.isSafeInteger(value.deviceTimestampMs) ||
+    (value.deviceTimestampMs as number) < 0 ||
     !isImu(value.imu1) ||
     !isImu(value.imu2) ||
     !isPressure(value.pressure)
@@ -109,10 +99,8 @@ function isSample(value: unknown): value is Sample {
   const imuValues = [
     ...value.imu1.accel,
     ...value.imu1.gyro,
-    ...value.imu1.mag,
     ...value.imu2.accel,
     ...value.imu2.gyro,
-    ...value.imu2.mag,
   ];
 
   return imuValues.every(
@@ -120,13 +108,17 @@ function isSample(value: unknown): value is Sample {
   );
 }
 
-export async function POST(request: Request) {
-  const device = await getDeviceFromRequest(
-    request as import('next/server').NextRequest
-  ).catch((error) => {
-    console.error('Device authentication failed:', error);
-    return null;
-  });
+export async function POST(request: NextRequest) {
+  // Authenticate the IoT device using X-Device-Token.
+  const device = await getDeviceFromRequest(request).catch(
+    (error) => {
+      console.error(
+        'Device authentication failed:',
+        error
+      );
+      return null;
+    }
+  );
 
   if (!device) {
     return NextResponse.json(
@@ -144,14 +136,20 @@ export async function POST(request: Request) {
     body = await request.json();
   } catch {
     return NextResponse.json(
-      { success: false, message: 'Invalid JSON request.' },
+      {
+        success: false,
+        message: 'Invalid JSON request.',
+      },
       { status: 400 }
     );
   }
 
   if (!isRecord(body)) {
     return NextResponse.json(
-      { success: false, message: 'Invalid request body.' },
+      {
+        success: false,
+        message: 'Invalid request body.',
+      },
       { status: 400 }
     );
   }
@@ -164,8 +162,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          'samples must contain between 1 and 500 samples.',
+        message: 'samples must contain 1–500 samples.',
       },
       { status: 400 }
     );
@@ -176,32 +173,25 @@ export async function POST(request: Request) {
       {
         success: false,
         message:
-          'Invalid sample. Check indexes, timestamps, IMU vectors and pressure values.',
+          'Invalid sample. Each sample must include deliveryId, eventType, deviceTimestampMs, IMU accelerometer/gyroscope vectors, and pressure.raw.',
       },
       { status: 400 }
     );
   }
 
-  const samples = body.samples;
-  const indexes = samples.map((s) => s.sampleIndex);
+  const samples = body.samples as Sample[];
 
-  if (new Set(indexes).size !== indexes.length) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Duplicate sample indexes in this batch.',
-      },
-      { status: 400 }
-    );
-  }
-
-  const client = await pool.connect();
+  let client:
+    | Awaited<ReturnType<typeof pool.connect>>
+    | undefined;
 
   try {
+    client = await pool.connect();
+
     await client.query('BEGIN');
 
-    // Serialize session selection/creation for this device.
-    const lockedDevice = await client.query(
+    // Confirm that the authenticated device is still active.
+    const deviceResult = await client.query(
       `SELECT id
          FROM public.devices
         WHERE id = $1
@@ -211,91 +201,74 @@ export async function POST(request: Request) {
       [device.id, device.user_id]
     );
 
-    if (lockedDevice.rowCount !== 1) {
+    if (deviceResult.rowCount !== 1) {
       await client.query('ROLLBACK');
 
       return NextResponse.json(
-        { success: false, message: 'Device is unavailable.' },
+        {
+          success: false,
+          message: 'Device is unavailable.',
+        },
         { status: 401 }
       );
     }
 
-    // Readings belong to the session the user started in the app. If none is
-    // open there is nothing to attach them to, so refuse instead of guessing.
-    const openSession = await client.query(
-      `SELECT session_no
-         FROM public.speed_sessions
-        WHERE user_id = $1
-          AND ended_at IS NULL
-        ORDER BY session_no DESC
-        LIMIT 1
-        FOR SHARE`,
-      [device.user_id]
-    );
-
-    if (openSession.rowCount !== 1) {
-      await client.query('ROLLBACK');
-      return NextResponse.json(
-        {
-          success: false,
-          message: 'No active session. Start a live session in the app first.',
-        },
-        { status: 409 }
-      );
-    }
-
-    const sessionNo: number = openSession.rows[0].session_no;
-
     const columns = [
       'user_id',
-      'session_no',
-      'sample_index',
+      'delivery_id',
+      'event_type',
       'device_timestamp_ms',
-      'imu1_ax', 'imu1_ay', 'imu1_az',
-      'imu1_gx', 'imu1_gy', 'imu1_gz',
-      'imu1_mx', 'imu1_my', 'imu1_mz',
-      'imu2_ax', 'imu2_ay', 'imu2_az',
-      'imu2_gx', 'imu2_gy', 'imu2_gz',
-      'imu2_mx', 'imu2_my', 'imu2_mz',
-      'pressure1_raw', 'pressure2_raw', 'pressure3_raw',
-      'pressure1_pa', 'pressure2_pa', 'pressure3_pa',
+      'imu1_ax',
+      'imu1_ay',
+      'imu1_az',
+      'imu1_gx',
+      'imu1_gy',
+      'imu1_gz',
+      'imu2_ax',
+      'imu2_ay',
+      'imu2_az',
+      'imu2_gx',
+      'imu2_gy',
+      'imu2_gz',
+      'pressure1_raw',
+      'pressure2_raw',
+      'pressure3_raw',
     ];
 
     const values: unknown[] = [];
+
     const rowPlaceholders = samples.map((sample) => {
       const row = [
         device.user_id,
-        sessionNo,
-        sample.sampleIndex,
-        sample.timestampMs,
+        sample.deliveryId,
+        sample.eventType,
+        sample.deviceTimestampMs,
         ...sample.imu1.accel,
         ...sample.imu1.gyro,
-        ...sample.imu1.mag,
         ...sample.imu2.accel,
         ...sample.imu2.gyro,
-        ...sample.imu2.mag,
         ...sample.pressure.raw,
-        ...(sample.pressure.pa ?? [null, null, null]),
       ];
 
       const start = values.length + 1;
+
       values.push(...row);
 
-      return `(${row.map(
-        (_, index) => `$${start + index}`
-      ).join(', ')})`;
+      return `(${row
+        .map((_, index) => `$${start + index}`)
+        .join(', ')})`;
     });
 
     const inserted = await client.query(
-      `INSERT INTO public.sensor_readings
-         (${columns.join(', ')})
+      `INSERT INTO public.sensor_readings (
+         ${columns.join(', ')}
+       )
        VALUES ${rowPlaceholders.join(', ')}
-       ON CONFLICT (user_id, session_no, sample_index)
-       DO NOTHING
-       RETURNING sample_index`,
+       RETURNING id`,
       values
     );
 
+    // Update the device's last-seen timestamp.
     await client.query(
       `UPDATE public.devices
           SET last_seen_at = NOW()
@@ -305,22 +278,27 @@ export async function POST(request: Request) {
 
     await client.query('COMMIT');
 
-    const storedSamples = inserted.rowCount ?? 0;
-
     return NextResponse.json(
       {
         success: true,
         data: {
-          sessionNo,
           receivedSamples: samples.length,
-          storedSamples,
-          duplicateSamples: samples.length - storedSamples,
+          storedSamples: inserted.rowCount ?? 0,
         },
       },
       { status: 201 }
     );
   } catch (error) {
-    await client.query('ROLLBACK');
+    if (client) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error(
+          'Sensor rollback failed:',
+          rollbackError
+        );
+      }
+    }
 
     console.error('Sensor ingest failed:', error);
 
@@ -332,6 +310,6 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   } finally {
-    client.release();
+    client?.release();
   }
 }
