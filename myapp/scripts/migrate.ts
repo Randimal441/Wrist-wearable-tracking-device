@@ -235,6 +235,132 @@ async function migrate() {
       ON public.sensor_readings(user_id, device_timestamp_ms);
   `);
 
+  // One normalized row per completed delivery.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS public.delivery_sensor_summary (
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      user_id BIGINT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+      delivery_id BIGINT NOT NULL UNIQUE,
+      start_timestamp_ms BIGINT,
+      end_timestamp_ms BIGINT,
+      start_imu1_gx DOUBLE PRECISION, start_imu1_gy DOUBLE PRECISION, start_imu1_gz DOUBLE PRECISION,
+      start_imu2_gx DOUBLE PRECISION, start_imu2_gy DOUBLE PRECISION, start_imu2_gz DOUBLE PRECISION,
+      start_pressure1_raw INTEGER, start_pressure2_raw INTEGER, start_pressure3_raw INTEGER,
+      end_imu1_gx DOUBLE PRECISION, end_imu1_gy DOUBLE PRECISION, end_imu1_gz DOUBLE PRECISION,
+      end_imu2_gx DOUBLE PRECISION, end_imu2_gy DOUBLE PRECISION, end_imu2_gz DOUBLE PRECISION,
+      end_pressure1_raw INTEGER, end_pressure2_raw INTEGER, end_pressure3_raw INTEGER,
+      wrist_angle_x_deg DOUBLE PRECISION,
+      wrist_angle_y_deg DOUBLE PRECISION,
+      wrist_angle_z_deg DOUBLE PRECISION,
+      wrist_angle_start_deg DOUBLE PRECISION,
+      wrist_angle_release_deg DOUBLE PRECISION,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_delivery_sensor_summary_user
+      ON public.delivery_sensor_summary(user_id, created_at DESC);
+
+    ALTER TABLE public.delivery_sensor_summary
+      ADD COLUMN IF NOT EXISTS wrist_angle_start_deg DOUBLE PRECISION,
+      ADD COLUMN IF NOT EXISTS wrist_angle_release_deg DOUBLE PRECISION;
+
+    CREATE OR REPLACE FUNCTION public.upsert_delivery_sensor_summary()
+    RETURNS TRIGGER
+    LANGUAGE plpgsql
+    AS $$
+    DECLARE
+      start_row public.sensor_readings%ROWTYPE;
+      end_row public.sensor_readings%ROWTYPE;
+      angle_x DOUBLE PRECISION;
+      angle_y DOUBLE PRECISION;
+      angle_z DOUBLE PRECISION;
+    BEGIN
+      IF NEW.delivery_id IS NULL THEN
+        RETURN NEW;
+      END IF;
+
+      SELECT * INTO start_row
+        FROM public.sensor_readings
+       WHERE user_id = NEW.user_id
+         AND delivery_id = NEW.delivery_id
+         AND event_type = 'DELIVERY_START'
+       ORDER BY id
+       LIMIT 1;
+
+      SELECT * INTO end_row
+        FROM public.sensor_readings
+       WHERE user_id = NEW.user_id
+         AND delivery_id = NEW.delivery_id
+         AND event_type = 'DELIVERY_END'
+       ORDER BY id
+       LIMIT 1;
+
+      IF start_row.id IS NULL OR end_row.id IS NULL THEN
+        RETURN NEW;
+      END IF;
+
+      angle_x := degrees((
+        (atan2(end_row.imu1_ay, end_row.imu1_az) - atan2(start_row.imu1_ay, start_row.imu1_az)) +
+        (atan2(end_row.imu2_ay, end_row.imu2_az) - atan2(start_row.imu2_ay, start_row.imu2_az))
+      ) / 2);
+
+      angle_y := degrees((
+        (atan2(-end_row.imu1_ax, sqrt(power(end_row.imu1_ay, 2) + power(end_row.imu1_az, 2))) -
+         atan2(-start_row.imu1_ax, sqrt(power(start_row.imu1_ay, 2) + power(start_row.imu1_az, 2)))) +
+        (atan2(-end_row.imu2_ax, sqrt(power(end_row.imu2_ay, 2) + power(end_row.imu2_az, 2))) -
+         atan2(-start_row.imu2_ax, sqrt(power(start_row.imu2_ay, 2) + power(start_row.imu2_az, 2))))
+      ) / 2);
+
+      angle_z := ((start_row.imu1_gz + start_row.imu2_gz + end_row.imu1_gz + end_row.imu2_gz) / 4)
+        * greatest(0, end_row.device_timestamp_ms - start_row.device_timestamp_ms) / 1000.0;
+
+      INSERT INTO public.delivery_sensor_summary (
+        user_id, delivery_id, start_timestamp_ms, end_timestamp_ms,
+        start_imu1_gx, start_imu1_gy, start_imu1_gz,
+        start_imu2_gx, start_imu2_gy, start_imu2_gz,
+        start_pressure1_raw, start_pressure2_raw, start_pressure3_raw,
+        end_imu1_gx, end_imu1_gy, end_imu1_gz,
+        end_imu2_gx, end_imu2_gy, end_imu2_gz,
+        end_pressure1_raw, end_pressure2_raw, end_pressure3_raw,
+        wrist_angle_x_deg, wrist_angle_y_deg, wrist_angle_z_deg,
+        wrist_angle_start_deg, wrist_angle_release_deg
+      ) VALUES (
+        start_row.user_id, start_row.delivery_id,
+        start_row.device_timestamp_ms, end_row.device_timestamp_ms,
+        start_row.imu1_gx, start_row.imu1_gy, start_row.imu1_gz,
+        start_row.imu2_gx, start_row.imu2_gy, start_row.imu2_gz,
+        start_row.pressure1_raw, start_row.pressure2_raw, start_row.pressure3_raw,
+        end_row.imu1_gx, end_row.imu1_gy, end_row.imu1_gz,
+        end_row.imu2_gx, end_row.imu2_gy, end_row.imu2_gz,
+        end_row.pressure1_raw, end_row.pressure2_raw, end_row.pressure3_raw,
+        angle_x, angle_y, angle_z,
+        0, angle_z
+      )
+      ON CONFLICT (delivery_id) DO UPDATE SET
+        user_id = EXCLUDED.user_id,
+        start_timestamp_ms = EXCLUDED.start_timestamp_ms,
+        end_timestamp_ms = EXCLUDED.end_timestamp_ms,
+        start_imu1_gx = EXCLUDED.start_imu1_gx, start_imu1_gy = EXCLUDED.start_imu1_gy, start_imu1_gz = EXCLUDED.start_imu1_gz,
+        start_imu2_gx = EXCLUDED.start_imu2_gx, start_imu2_gy = EXCLUDED.start_imu2_gy, start_imu2_gz = EXCLUDED.start_imu2_gz,
+        start_pressure1_raw = EXCLUDED.start_pressure1_raw, start_pressure2_raw = EXCLUDED.start_pressure2_raw, start_pressure3_raw = EXCLUDED.start_pressure3_raw,
+        end_imu1_gx = EXCLUDED.end_imu1_gx, end_imu1_gy = EXCLUDED.end_imu1_gy, end_imu1_gz = EXCLUDED.end_imu1_gz,
+        end_imu2_gx = EXCLUDED.end_imu2_gx, end_imu2_gy = EXCLUDED.end_imu2_gy, end_imu2_gz = EXCLUDED.end_imu2_gz,
+        end_pressure1_raw = EXCLUDED.end_pressure1_raw, end_pressure2_raw = EXCLUDED.end_pressure2_raw, end_pressure3_raw = EXCLUDED.end_pressure3_raw,
+        wrist_angle_x_deg = EXCLUDED.wrist_angle_x_deg, wrist_angle_y_deg = EXCLUDED.wrist_angle_y_deg, wrist_angle_z_deg = EXCLUDED.wrist_angle_z_deg,
+        wrist_angle_start_deg = EXCLUDED.wrist_angle_start_deg,
+        wrist_angle_release_deg = EXCLUDED.wrist_angle_release_deg;
+
+      RETURN NEW;
+    END;
+    $$;
+
+    DROP TRIGGER IF EXISTS sensor_readings_summary_trigger
+      ON public.sensor_readings;
+    CREATE TRIGGER sensor_readings_summary_trigger
+      AFTER INSERT OR UPDATE ON public.sensor_readings
+      FOR EACH ROW
+      EXECUTE FUNCTION public.upsert_delivery_sensor_summary();
+  `);
+
   // 8. Row Level Security
   // No policies are created by this migration.
   await pool.query(`
@@ -243,6 +369,7 @@ async function migrate() {
     ALTER TABLE public.speed_deliveries ENABLE ROW LEVEL SECURITY;
     ALTER TABLE public.devices ENABLE ROW LEVEL SECURITY;
     ALTER TABLE public.sensor_readings ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.delivery_sensor_summary ENABLE ROW LEVEL SECURITY;
   `);
 
   console.log('✅ Migration complete!');

@@ -78,3 +78,36 @@ CREATE INDEX IF NOT EXISTS idx_sessions_device_started
   ON public.bowling_sessions(device_id, started_at DESC);
 CREATE INDEX IF NOT EXISTS idx_readings_session_time
   ON public.sensor_readings(session_id, device_timestamp_ms);
+
+CREATE TABLE IF NOT EXISTS public.delivery_sensor_summary (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  delivery_id BIGINT NOT NULL UNIQUE,
+  start_timestamp_ms BIGINT,
+  end_timestamp_ms BIGINT,
+  start_imu1_gx DOUBLE PRECISION,
+  start_imu1_gy DOUBLE PRECISION,
+  start_imu1_gz DOUBLE PRECISION,
+  start_imu2_gx DOUBLE PRECISION,
+  start_imu2_gy DOUBLE PRECISION,
+  start_imu2_gz DOUBLE PRECISION,
+  start_pressure1_raw INTEGER,
+  start_pressure2_raw INTEGER,
+  start_pressure3_raw INTEGER,
+  end_imu1_gx DOUBLE PRECISION,
+  end_imu1_gy DOUBLE PRECISION,
+  end_imu1_gz DOUBLE PRECISION,
+  end_imu2_gx DOUBLE PRECISION,
+  end_imu2_gy DOUBLE PRECISION,
+  end_imu2_gz DOUBLE PRECISION,
+  end_pressure1_raw INTEGER,
+  end_pressure2_raw INTEGER,
+  end_pressure3_raw INTEGER,
+  wrist_angle_x_deg DOUBLE PRECISION,
+  wrist_angle_y_deg DOUBLE PRECISION,
+  wrist_angle_z_deg DOUBLE PRECISION,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_delivery_sensor_summary_user
+  ON public.delivery_sensor_summary(user_id, created_at DESC);
